@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>FIL• POL · Identificación</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#111827; --panel-border:#28324a;
+      --text:#e5e7eb; --muted:#9ca3af; --primary:#2563eb; --primary-2:#1d4ed8; --focus:#93c5fd; --hover:rgba(37,99,235,.12);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial; }
+
+    /* Cabecera fija */
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter:saturate(1.2) blur(6px);
+      background:linear-gradient(180deg, rgba(17,24,39,.9), rgba(17,24,39,.75));
+      border-bottom:1px solid var(--panel-border);
+    }
+    .hdr{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; max-width:980px; margin:0 auto; }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.5px; }
+    .badge{ display:inline-grid; place-items:center; width:38px; height:38px; border-radius:10px; border:1px solid var(--panel-border); background:#0e1629; box-shadow:0 6px 18px rgba(0,0,0,.25) inset; font-weight:800; }
+    .badge .dot{ padding:0 2px; opacity:.9 }
+    .brand-title{ font-size:1.05rem; }
+    .hint{ color:var(--muted); font-size:.82rem }
+
+    main{ max-width:980px; margin:0 auto; padding:12px 12px 32px; }
+    .spacer{ height:8px }
+
+    .card{ background:var(--panel); border:1px solid var(--panel-border); border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,.35); padding:14px; margin:12px 0; }
+    .section-title{ font-weight:700; margin:2px 0 12px; font-size:1rem; color:#fff; }
+
+    .grid{ display:grid; gap:10px; grid-template-columns: 1fr 1fr; }
+    @media (max-width:720px){ .grid{ grid-template-columns:1fr } }
+
+    label{ display:block; font-size:.84rem; color:var(--muted); margin:2px 0 6px }
+    input, select, textarea{
+      width:100%; background:#0e1629; color:var(--text);
+      border:1px solid var(--panel-border); border-radius:10px; padding:10px 12px; outline:none;
+    }
+    input:focus, select:focus, textarea:focus{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(147,197,253,.15); }
+
+    .row{ display:grid; gap:8px }
+    .actions{ display:grid; gap:10px; grid-template-columns:1fr 1fr; margin:18px 0 6px; }
+    @media (max-width:560px){ .actions{ grid-template-columns:1fr } }
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:16px 18px; border-radius:14px; border:1px solid var(--panel-border); background:#0e1629; color:#fff; font-weight:700; cursor:pointer; user-select:none; transition:transform .05s ease, background .2s ease, border-color .2s ease; }
+    .btn:hover{ background:var(--hover) } .btn:active{ transform:scale(.995) }
+    .btn-primary{ background:var(--primary); border-color:rgba(37,99,235,.6) } .btn-primary:hover{ background:var(--primary-2) }
+    .foot-note{ color:var(--muted); font-size:.78rem; text-align:center; margin-top:10px }
+    .hide{ display:none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hdr">
+      <div class="brand" aria-label="Identificación en vía pública">
+        <div class="badge" aria-hidden="true"><span>FIL<span class="dot">•</span>POL</span></div>
+        <div class="brand-title">Identificación</div>
+      </div>
+      <div class="hint">Modo calle · móvil</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="spacer"></div>
+
+    <section class="card">
+      <div class="section-title">CONDICIÓN</div>
+      <div class="grid">
+        <div class="row">
+          <label for="condicion">Condición *</label>
+          <select id="condicion" required>
+            <option>Perjudicado</option>
+            <option>Testigo</option>
+            <option>Requirente</option>
+            <option selected>Identificado</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">FILIACIÓN</div>
+      <div class="grid">
+
+        <div class="row">
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" autocomplete="off" required />
+        </div>
+
+        <div class="row">
+          <label for="apellidos">Apellidos *</label>
+          <input id="apellidos" autocomplete="off" required />
+        </div>
+
+        <div class="row">
+          <label for="sexo">Sexo</label>
+          <select id="sexo">
+            <option value="">—</option>
+            <option>Masculino</option>
+            <option>Femenino</option>
+            <option>No especifica</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="nacionalidad">Nacionalidad *</label>
+          <input id="nacionalidad" placeholder="ESPAÑA, ITALIA…" required />
+        </div>
+
+        <div class="row">
+          <label for="tipoDoc">Tipo de documento *</label>
+          <select id="tipoDoc" required>
+            <option value="INDOCUMENTADO/A">INDOCUMENTADO/A</option>
+            <option value="DNI">DNI</option>
+            <option value="NIE">NIE</option>
+            <option value="Pasaporte">Pasaporte</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="numDoc">Nº Documento *</label>
+          <input id="numDoc" autocomplete="off" required />
+        </div>
+
+        <div class="row hide" id="rowDocOtro">
+          <label for="docOtro">Especifique tipo (si “Otro”)</label>
+          <input id="docOtro" placeholder="Carné consular, permiso X…" />
+        </div>
+
+        <div class="row">
+          <label for="padres">Nombre de los Padres</label>
+          <input id="padres" placeholder="Padre / Madre o tutores…" />
+        </div>
+
+        <div class="row">
+          <label for="fechaNac">Fecha de nacimiento</label>
+          <input id="fechaNac" type="date" />
+        </div>
+
+        <div class="row">
+          <label for="lugarNac">Lugar de nacimiento</label>
+          <input id="lugarNac" placeholder="Ciudad, provincia, país…" />
+        </div>
+
+        <div class="row">
+          <label for="domicilio">Domicilio</label>
+          <input id="domicilio" placeholder="Calle, nº, piso…" />
+        </div>
+
+        <div class="row">
+          <label for="telefono">Teléfono</label>
+          <input id="telefono" inputmode="tel" />
+        </div>
+
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="btnGuardar">Guardar JSON</button>
+        <button class="btn" id="btnLimpiar">Limpiar</button>
+      </div>
+      <div class="foot-note" id="msg"></div>
+    </section>
+  </main>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const toast = t => { const el=$("#msg"); el.textContent=t; setTimeout(()=>el.textContent="",4000); };
+
+    // Mostrar campo manual si "Tipo de documento" = Otro
+    const tipoDocSel = $("#tipoDoc");
+    const rowDocOtro = $("#rowDocOtro");
+    tipoDocSel.addEventListener("change",()=>{
+      rowDocOtro.classList.toggle("hide", tipoDocSel.value !== "Otro");
+      if(tipoDocSel.value === "Otro") $("#docOtro").focus();
+    });
+
+    function hoyStamp(){
+      const d=new Date(), p=n=>String(n).padStart(2,"0");
+      return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
+    }
+    function slug(v){
+      return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'').toUpperCase();
+    }
+
+    function collect(){
+      // Resuelve "Tipo de documento" con el manual si procede
+      let tipoDocumento = tipoDocSel.value;
+      if(tipoDocumento === "Otro"){
+        const manual = $("#docOtro").value.trim();
+        if(manual) tipoDocumento = manual;
+      }
+
+      const requiredOk = $("#nombre").value.trim() && $("#apellidos").value.trim() &&
+                         $("#nacionalidad").value.trim() && tipoDocumento &&
+                         $("#numDoc").value.trim() && $("#condicion").value;
+      if(!requiredOk){ toast("Revisa los campos obligatorios (*)"); return null; }
+
+      // JSON con claves EXACTAS para compatibilidad
+      const data = {
+        "Condición": $("#condicion").value,
+        "Nombre": $("#nombre").value.trim(),
+        "Apellidos": $("#apellidos").value.trim(),
+        "Sexo": $("#sexo").value || "",
+        "Nacionalidad": $("#nacionalidad").value.trim(),
+        "Tipo de documento": tipoDocumento,
+        "Nº Documento": $("#numDoc").value.trim(),
+        "Nombre de los Padres": $("#padres").value.trim() || "",
+        "Fecha de nacimiento": $("#fechaNac").value || "",
+        "Lugar de nacimiento": $("#lugarNac").value.trim() || "",
+        "Domicilio": $("#domicilio").value.trim() || "",
+        "Teléfono": $("#telefono").value.trim() || ""
+      };
+      return data;
+    }
+
+    function saveJSON(obj){
+      const ap = slug($("#apellidos").value)||"SIN_APELLIDOS";
+      const no = slug($("#nombre").value)||"SIN_NOMBRE";
+      const fn = `FILPOL_${hoyStamp()}_${ap}_${no}.json`;
+      const blob = new Blob([JSON.stringify(obj,null,2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href=url; a.download=fn;
+      document.body.appendChild(a); a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0);
+      toast(`JSON guardado: ${fn}`);
+    }
+
+    function clearForm(){
+      document.querySelectorAll("input, select").forEach(el=>{
+        if(el.id==="condicion"){ el.value="Identificado"; return; }
+        if(el.tagName==="SELECT"){ el.value=""; }
+        else el.value="";
+      });
+      rowDocOtro.classList.add("hide");
+      $("#nombre").focus();
+      toast("Formulario limpio.");
+    }
+
+    $("#btnGuardar").addEventListener("click", ()=>{ const obj=collect(); if(obj) saveJSON(obj); });
+    $("#btnLimpiar").addEventListener("click", clearForm);
+
+    window.addEventListener("load", ()=>{ $("#nombre").focus({preventScroll:true}); });
+  </script>
+</body>
+</html>
