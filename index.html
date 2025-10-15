@@ -2,199 +2,177 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>🛡️ Compapol • Away</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>COMPAPOL • AWAY</title>
 <style>
-  :root{
-    /* ⚠️ Pon aquí tu imagen vertical del interior del patrulla */
-    --bg-img: url('bg_patrol.png');
+:root{
+  --bg-img: url('bg_patrol.png');
+  --azul-neon: #2b5fff;
+}
 
-    --txt:#fff; --muted:#b5b5b5;
-    --line:#2b5fff;               /* azul patrulla (neón) */
-    --ok:#22c55e; --danger:#ef4444;
-    --glass: rgba(18,18,18,.78);  /* “vidrio ahumado” */
-    --field: rgba(14,14,14,.82);
-    --glow-blue: 0 0 6px rgba(43,95,255,.85), 0 0 18px rgba(43,95,255,.55);
-    --glow-green: 0 0 6px rgba(16,185,129,.8), 0 0 14px rgba(16,185,129,.55);
-    --glow-red: 0 0 6px rgba(239,68,68,.9), 0 0 14px rgba(239,68,68,.6);
-  }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body{ height:100%; }
-  body{
-    margin:0; color:var(--txt); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-    background:#000;
-  }
-  /* Fondo: foto fija a pantalla completa */
-  body::before{
-    content:""; position:fixed; inset:0; z-index:-2;
-    background-image: var(--bg-img);
-    background-size: cover; background-position: center; background-attachment: fixed;
-  }
-  /* Velo oscuro + ligero blur para contraste del texto */
-  body::after{
-    content:""; position:fixed; inset:0; z-index:-1;
-    background: rgba(0,0,0,.55);
-    backdrop-filter: blur(2px);
-  }
+/* fondo a pantalla completa */
+body::before{
+  content:""; position:fixed; inset:0; z-index:-2;
+  background-image: var(--bg-img);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+@supports (-webkit-touch-callout: none) {
+  body::before{ background-attachment: scroll; }
+}
 
-  /* Header con neón */
-  header{
-    position:sticky; top:0; z-index:10; padding:14px 12px;
-    background: rgba(10,14,41,.65);
-    border-bottom:1px solid var(--line);
-    box-shadow: var(--glow-blue);
-  }
-  h1{
-    margin:0; text-align:center; font-weight:900; letter-spacing:.4px; font-size:18px;
-    color:#e8f0ff; text-shadow: 0 0 9px rgba(90,140,255,.9), 0 0 20px rgba(60,110,255,.6);
-  }
+/* velo oscuro translúcido */
+body::after{
+  content:""; position:fixed; inset:0; z-index:-1;
+  background: rgba(0,0,0,.40);
+  backdrop-filter: blur(2px);
+}
 
-  .wrap{ padding:12px; max-width:820px; margin:0 auto; width:100%; }
+body{
+  margin:0; font-family:system-ui, sans-serif; color:#fff;
+  display:flex; flex-direction:column; align-items:center;
+  background:#000; min-height:100vh;
+}
 
-  /* Contenedor principal en vidrio ahumado */
-  .glass{
-    background: var(--glass);
-    border:1px solid var(--line);
-    border-radius:14px;
-    box-shadow: var(--glow-blue);
-    padding:10px;
-  }
+/* encabezado */
+h1{
+  text-align:center;
+  color:var(--azul-neon);
+  font-size:1.6rem;
+  margin:18px 0 10px;
+  text-shadow:0 0 10px var(--azul-neon),0 0 25px var(--azul-neon);
+  letter-spacing:1px;
+  font-weight:700;
+}
 
-  /* Botonera: 5 iconos que juntos ocupan el 100% */
-  .bar{
-    display:grid;
-    grid-template-columns:repeat(5, minmax(0,1fr)); /* 🎤 ⏸️ 🏛️ 🧹 💾 */
-    gap:8px; width:100%; margin-bottom:10px;
-  }
-  @media (max-width:420px){ .bar{ gap:6px; } }
+/* acordeón y paneles */
+.accordion, textarea, .out{
+  background: rgba(18,18,18,.60);
+  border:1px solid var(--azul-neon);
+  border-radius:14px;
+  box-shadow: 0 0 6px rgba(43,95,255,.85), 0 0 18px rgba(43,95,255,.55);
+}
+.accordion summary{
+  list-style:none; cursor:pointer;
+  padding:10px 14px; color:#fff;
+  font-weight:600; text-align:center;
+}
+.accordion summary::-webkit-details-marker{display:none}
 
-  .btn{
-    height:44px; border:1px solid var(--line);
-    background: rgba(10,14,41,.7);
-    color:var(--txt); border-radius:12px; font-size:18px;
-    display:inline-flex; align-items:center; justify-content:center;
-    box-shadow: var(--glow-blue);
-    transition: box-shadow .12s, border-color .12s, transform .08s;
-  }
-  .btn:active{ transform:translateY(1px); }
-  .btn.flash-red{ border-color: var(--danger)!important; box-shadow: var(--glow-red)!important; }
+/* campos */
+input, select{
+  width:100%; box-sizing:border-box;
+  margin:4px 0; padding:8px 10px;
+  border:none; border-radius:8px;
+  background:rgba(255,255,255,.05);
+  color:#fff; font-size:.95rem;
+}
 
-  textarea{
-    width:100%; min-height:200px; background: var(--glass); color:var(--txt);
-    border:1px solid var(--line); border-radius:12px; padding:10px; font-size:15px;
-    box-shadow: var(--glow-blue);
-  }
-  textarea::placeholder{ color:var(--muted); opacity:.35; }
+/* área de texto */
+textarea{
+  width:calc(100% - 20px);
+  min-height:160px; margin:10px; padding:10px;
+  resize:vertical; color:#fff;
+  border:none; outline:none;
+}
 
-  .status{ font-size:12px; color:var(--muted); min-height:18px; margin:6px 2px 10px; }
+/* barra de botones */
+.bar{
+  display:flex; justify-content:space-between;
+  width:100%; max-width:400px;
+  margin:10px auto 30px;
+  gap:10px;
+}
 
-  .out{
-    min-height:180px; background: var(--glass); border:1px solid var(--line);
-    border-radius:12px; padding:10px; box-shadow: var(--glow-blue);
-  }
+/* botón redondo estilo neón azul */
+.btn-round{
+  width:52px; height:52px;
+  border-radius:50%;
+  border:2px solid var(--azul-neon);
+  background: radial-gradient(ellipse at center, rgba(30,45,110,.25), rgba(10,14,41,.75) 60%);
+  box-shadow:
+    0 0 0 1px rgba(43,95,255,.25) inset,
+    0 0 12px rgba(43,95,255,.75),
+    0 0 28px rgba(43,95,255,.45);
+  font-size:22px; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  animation: neonPulse 2.4s ease-in-out infinite;
+}
+.btn-round:active{
+  transform:translateY(1px) scale(.98);
+  box-shadow:
+    0 0 0 1px rgba(43,95,255,.35) inset,
+    0 0 18px rgba(43,95,255,.95),
+    0 0 36px rgba(43,95,255,.65);
+}
+@keyframes neonPulse{
+  0%,100%{ box-shadow: 0 0 0 1px rgba(43,95,255,.25) inset, 0 0 10px rgba(43,95,255,.6), 0 0 24px rgba(43,95,255,.4);}
+  50%{ box-shadow: 0 0 0 1px rgba(43,95,255,.35) inset, 0 0 14px rgba(43,95,255,.85), 0 0 32px rgba(43,95,255,.55);}
+}
 
-  /* Acordeón Filiaciones */
-  .accordion{ border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:10px 0; box-shadow: var(--glow-blue); background: var(--glass); }
-  .acc-h{
-    background: rgba(10,14,41,.55);
-    padding:10px; display:flex; align-items:center; justify-content:space-between; font-size:14px;
-  }
-  .acc-c{ background: transparent; padding:10px; display:none; }
-  .acc-c.show{ display:block; }
+/* título de acordeón con triángulos */
+.acc-title{
+  flex:1;
+  text-align:center;
+  font-weight:600;
+  letter-spacing:.2px;
+}
+.acc-title::before{content:"◄";margin-right:8px;opacity:.7;}
+.acc-title::after{content:"►";margin-left:8px;opacity:.7;}
 
-  /* Título centrado con triángulos */
-  .acc-title{
-    flex:1; text-align:center; font-weight:700; letter-spacing:.25px;
-    text-shadow:0 0 8px rgba(90,140,255,.75);
-  }
-  .acc-title::before{ content:"◄"; margin-right:8px; opacity:.75; }
-  .acc-title::after { content:"►"; margin-left:8px; opacity:.75; }
-
-  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; }
-  input[type="text"], select{
-    width:100%; height:38px; border-radius:10px; border:1px solid var(--line);
-    background: var(--field); color:var(--txt); padding:0 10px; font-size:14px;
-    box-shadow: inset 0 0 0 1px rgba(43,95,255,.1);
-  }
-  input::placeholder{ color:var(--muted); opacity:.35; }
-  select{ color:var(--txt); background: var(--field); }
-
-  .list{ margin-top:8px; display:grid; gap:6px; width:100%; }
-  .rowItem{
-    display:flex; align-items:center; justify-content:space-between; gap:8px;
-    padding:6px 8px; background: rgba(20,20,20,.75); border:1px solid var(--line); border-radius:10px; font-size:13px;
-  }
-
-  /* Botones verdes (Añadir/Importar) con brillo propio */
-  .btn-green{
-    border-color:#10b981; box-shadow: var(--glow-green);
-    background: rgba(14,42,37,.8);
-    font-size:14px; height:34px; padding:0 10px; border-radius:10px;
-  }
-
-  /* Título “Versión Policial” centrado con brillo */
-  .section-title{
-    margin:10px 0 6px; text-align:center; font-weight:800;
-    text-shadow:0 0 8px rgba(100,150,255,.8);
-    letter-spacing:.2px;
-  }
+/* título versión policial */
+h3{
+  margin:10px 0 6px;
+  text-align:center;
+  color:var(--azul-neon);
+  text-shadow:0 0 8px var(--azul-neon);
+}
 </style>
 </head>
 <body>
-<header><h1>🛡️ COMPAPOL • AWAY</h1></header>
 
-<div class="wrap glass">
-  <!-- Botonera (iconos neón) -->
-  <div class="bar" id="topBar">
-    <button id="btnRec" class="btn" title="Grabar" aria-label="Grabar">🎤</button>
-    <button id="btnRecStop" class="btn" title="Parar" aria-label="Parar">⏸️</button>
-    <button id="btnDraft" class="btn" title="Redacción policial" aria-label="Redacción policial">🏛️</button>
-    <button id="btnClear" class="btn" title="Limpiar" aria-label="Limpiar">🧹</button>
-    <button id="btnDownload" class="btn" title="Guardar JSON" aria-label="Guardar JSON">💾</button>
+<h1>COMPAPOL • AWAY</h1>
+
+<details class="accordion" open>
+  <summary><span class="acc-title">Filiaciones</span></summary>
+  <div style="padding:10px;">
+    <select id="fiCondicion" required>
+      <option value="" disabled selected>Condición *</option>
+      <option>detenido</option>
+      <option>identificado</option>
+      <option>investigado</option>
+      <option>perjudicado</option>
+      <option>requirente</option>
+      <option>testigo</option>
+    </select>
+    <select id="fiSexo" required>
+      <option value="" disabled selected>Sexo *</option>
+      <option>Masculino</option>
+      <option>Femenino</option>
+    </select>
+    <input id="fiNombre" placeholder="Nombre">
+    <input id="fiApellidos" placeholder="Apellidos">
+    <input id="fiTipoDoc" placeholder="Tipo Documento">
+    <input id="fiNumDoc" placeholder="Número Documento">
+    <input id="fiFecha" placeholder="Fecha Nacimiento">
+    <input id="fiPadres" placeholder="Nombre de los Padres">
+    <input id="fiDomicilio" placeholder="Domicilio">
   </div>
+</details>
 
-  <!-- Filiaciones -->
-  <div class="accordion" id="accFili">
-    <div class="acc-h"><span class="acc-title">FILIACIONES</span></div>
-    <div class="acc-c" id="accBody">
-      <div class="grid2">
-        <select id="fiCondicion" title="Condición" required>
-          <option value="" disabled selected>Condición *</option>
-          <option>detenido</option><option>identificado</option><option>investigado</option>
-          <option>perjudicado</option><option>requirente</option><option>testigo</option>
-        </select>
-        <select id="fiSexo" title="Sexo" required>
-          <option value="" disabled selected>Sexo *</option>
-          <option>Masculino</option><option>Femenino</option>
-        </select>
-        <input id="fiNombre" type="text" placeholder="Nombre">
-        <input id="fiApellidos" type="text" placeholder="Apellidos (MAYÚSC.)">
-        <input id="fiNacionalidad" type="text" placeholder="Nacionalidad">
-        <input id="fiTipoDoc" type="text" placeholder="Tipo documento">
-        <input id="fiNumDoc" type="text" placeholder="Nº Documento">
-        <input id="fiFechaNac" type="text" placeholder="Fecha Nacimiento">
-        <input id="fiLugarNac" type="text" placeholder="Lugar de nacimiento">
-        <input id="fiPadres" type="text" placeholder="Nombre de los Padres">
-        <input id="fiDom" type="text" placeholder="Domicilio">
-        <input id="fiTel" type="text" placeholder="Teléfono">
-      </div>
-      <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <button id="btnAddFili" class="btn btn-green" title="Guardar ficha">➕ Añadir</button>
-        <label class="btn btn-green" for="fileFili" title="Importar JSON">📥 Importar</label>
-        <input id="fileFili" type="file" accept="application/json" style="display:none">
-      </div>
-      <div class="list" id="filiList"></div>
-    </div>
-  </div>
+<h3>VERSIÓN POLICIAL</h3>
+<textarea id="txtOut"></textarea>
 
-  <!-- Texto dictado -->
-  <textarea id="txt"></textarea>
-  <div id="status" class="status"></div>
-
-  <h3 class="section-title">VERSIÓN POLICIAL</h3>
-  <div id="out" class="out" contenteditable="true"></div>
+<div class="bar">
+  <button id="btnRec"       class="btn-round" title="Grabar">🎤</button>
+  <button id="btnRecStop"   class="btn-round" title="Parar">⏸️</button>
+  <button id="btnDraft"     class="btn-round" title="Redacción">🏛️</button>
+  <button id="btnClear"     class="btn-round" title="Limpiar">🧹</button>
+  <button id="btnDownload"  class="btn-round" title="Guardar JSON">💾</button>
 </div>
-
 <script>
 /* ===== Config ===== */
 const API_BASE = "https://compa-movil-backend.onrender.com";
