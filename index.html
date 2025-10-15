@@ -2,207 +2,219 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>COMPAPOL • AWAY</title>
 <style>
 :root{
-  --bg-img: url('bg_patrol.png');
-  --azul-neon: #2b5fff;
+  --bg-img: url('bg_patrol.png');        /* imagen en la MISMA carpeta */
+  --azul:#2b5fff; --ok:#22c55e; --danger:#ef4444; --txt:#fff; --muted:#b5b5b5;
 }
 
-/* fondo a pantalla completa */
+/* Fondo a pantalla completa (fijo) */
 body::before{
   content:""; position:fixed; inset:0; z-index:-2;
   background-image: var(--bg-img);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-size: cover; background-position:center; background-repeat:no-repeat;
   background-attachment: fixed;
 }
-@supports (-webkit-touch-callout: none) {
-  body::before{ background-attachment: scroll; }
-}
+@supports (-webkit-touch-callout:none){ body::before{ background-attachment:scroll; } }
 
-/* velo oscuro translúcido */
+/* Velo oscuro translúcido */
 body::after{
   content:""; position:fixed; inset:0; z-index:-1;
-  background: rgba(0,0,0,.40);
-  backdrop-filter: blur(2px);
+  background: rgba(0,0,0,.40); backdrop-filter: blur(2px);
 }
 
-body{
-  margin:0; font-family:system-ui, sans-serif; color:#fff;
-  display:flex; flex-direction:column; align-items:center;
-  background:#000; min-height:100vh;
-}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; }
+body{ margin:0; color:var(--txt); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:#000; }
 
-/* encabezado */
+header{ position:sticky; top:0; z-index:5; padding:14px 12px; }
 h1{
-  text-align:center;
-  color:var(--azul-neon);
-  font-size:1.6rem;
-  margin:18px 0 10px;
-  text-shadow:0 0 10px var(--azul-neon),0 0 25px var(--azul-neon);
-  letter-spacing:1px;
-  font-weight:700;
+  margin:0; text-align:center; font-weight:900; letter-spacing:.35px; font-size:18px;
+  color:var(--azul); text-shadow:0 0 10px var(--azul), 0 0 24px rgba(43,95,255,.75);
 }
+.wrap{ padding:12px; max-width:820px; margin:0 auto; }
 
-/* acordeón y paneles */
-.accordion, textarea, .out{
+/* Panel vidrio ahumado */
+.glass{
   background: rgba(18,18,18,.60);
-  border:1px solid var(--azul-neon);
+  border:1px solid var(--azul);
   border-radius:14px;
   box-shadow: 0 0 6px rgba(43,95,255,.85), 0 0 18px rgba(43,95,255,.55);
-}
-.accordion summary{
-  list-style:none; cursor:pointer;
-  padding:10px 14px; color:#fff;
-  font-weight:600; text-align:center;
-}
-.accordion summary::-webkit-details-marker{display:none}
-
-/* campos */
-input, select{
-  width:100%; box-sizing:border-box;
-  margin:4px 0; padding:8px 10px;
-  border:none; border-radius:8px;
-  background:rgba(255,255,255,.05);
-  color:#fff; font-size:.95rem;
+  padding:10px;
 }
 
-/* área de texto */
-textarea{
-  width:calc(100% - 20px);
-  min-height:160px; margin:10px; padding:10px;
-  resize:vertical; color:#fff;
-  border:none; outline:none;
-}
+/* Botonera: 5 botones que juntos ocupan el 100% */
+.bar{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+@media (max-width:420px){ .bar{ gap:8px; } }
 
-/* barra de botones */
-.bar{
-  display:flex; justify-content:space-between;
-  width:100%; max-width:400px;
-  margin:10px auto 30px;
-  gap:10px;
-}
-
-/* botón redondo estilo neón azul */
+/* Botón redondo NEÓN + icono SVG */
 .btn-round{
-  width:52px; height:52px;
-  border-radius:50%;
-  border:2px solid var(--azul-neon);
-  background: radial-gradient(ellipse at center, rgba(30,45,110,.25), rgba(10,14,41,.75) 60%);
+  width:56px; height:56px; border-radius:50%;
+  border:2px solid var(--azul);
+  background: radial-gradient(ellipse at center, rgba(30,45,110,.22), rgba(10,14,41,.78) 62%);
   box-shadow:
     0 0 0 1px rgba(43,95,255,.25) inset,
     0 0 12px rgba(43,95,255,.75),
     0 0 28px rgba(43,95,255,.45);
-  font-size:22px; color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  transition: transform .08s ease;
   animation: neonPulse 2.4s ease-in-out infinite;
 }
-.btn-round:active{
-  transform:translateY(1px) scale(.98);
+.btn-round:active{ transform:translateY(1px) scale(.98); }
+.btn-round.flash-red{
+  border-color:var(--danger)!important;
   box-shadow:
-    0 0 0 1px rgba(43,95,255,.35) inset,
-    0 0 18px rgba(43,95,255,.95),
-    0 0 36px rgba(43,95,255,.65);
+    0 0 0 1px rgba(239,68,68,.35) inset,
+    0 0 14px rgba(239,68,68,.95),
+    0 0 34px rgba(239,68,68,.65)!important;
 }
 @keyframes neonPulse{
-  0%,100%{ box-shadow: 0 0 0 1px rgba(43,95,255,.25) inset, 0 0 10px rgba(43,95,255,.6), 0 0 24px rgba(43,95,255,.4);}
-  50%{ box-shadow: 0 0 0 1px rgba(43,95,255,.35) inset, 0 0 14px rgba(43,95,255,.85), 0 0 32px rgba(43,95,255,.55);}
+  0%,100%{ box-shadow:0 0 0 1px rgba(43,95,255,.25) inset, 0 0 10px rgba(43,95,255,.6), 0 0 24px rgba(43,95,255,.4); }
+  50%{ box-shadow:0 0 0 1px rgba(43,95,255,.35) inset, 0 0 14px rgba(43,95,255,.85), 0 0 32px rgba(43,95,255,.55); }
+}
+/* Icono SVG con brillo */
+.icon{ width:26px; height:26px; stroke:var(--azul); fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;
+  filter: drop-shadow(0 0 6px rgba(43,95,255,.85)) drop-shadow(0 0 14px rgba(43,95,255,.55));
 }
 
-/* título de acordeón con triángulos */
-.acc-title{
-  flex:1;
-  text-align:center;
-  font-weight:600;
-  letter-spacing:.2px;
+/* Inputs/Selects */
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+input[type="text"], select{
+  width:100%; height:40px; border-radius:10px; border:1px solid var(--azul);
+  background: rgba(14,14,14,.82); color:#fff; padding:0 10px; font-size:14px;
+  box-shadow: inset 0 0 0 1px rgba(43,95,255,.08);
 }
-.acc-title::before{content:"◄";margin-right:8px;opacity:.7;}
-.acc-title::after{content:"►";margin-left:8px;opacity:.7;}
+input::placeholder{ color:var(--muted); opacity:.35; }
+select{ background: rgba(14,14,14,.82); color:#fff; }
 
-/* título versión policial */
-h3{
-  margin:10px 0 6px;
-  text-align:center;
-  color:var(--azul-neon);
-  text-shadow:0 0 8px var(--azul-neon);
+/* Acordeón */
+.accordion{ border:1px solid var(--azul); border-radius:12px; overflow:hidden; margin:10px 0; background: rgba(18,18,18,.60); }
+.acc-h{ background: rgba(10,14,41,.55); padding:10px; display:flex; align-items:center; justify-content:center; }
+.acc-title{ font-weight:700; text-shadow:0 0 7px rgba(100,150,255,.8); }
+.acc-c{ display:none; padding:10px; }
+.acc-c.show{ display:block; }
+
+/* Lista de fichas */
+.list{ margin-top:8px; display:grid; gap:6px; }
+.rowItem{ display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:6px 8px; background: rgba(20,20,20,.75); border:1px solid var(--azul); border-radius:10px; font-size:13px; }
+.rowItem .mini{ width:38px; height:38px; }
+
+/* Texto / Salida */
+textarea{
+  width:100%; min-height:200px; background: rgba(18,18,18,.60); color:#fff;
+  border:1px solid var(--azul); border-radius:12px; padding:10px; font-size:15px; box-shadow: 0 0 6px rgba(43,95,255,.85), 0 0 18px rgba(43,95,255,.55);
 }
+.status{ font-size:12px; color:var(--muted); min-height:18px; margin:6px 2px 10px; }
+.out{ min-height:180px; background: rgba(18,18,18,.60); border:1px solid var(--azul); border-radius:12px; padding:10px; box-shadow: 0 0 6px rgba(43,95,255,.85), 0 0 18px rgba(43,95,255,.55); }
+.section-title{ margin:10px 0 6px; text-align:center; font-weight:800; color:var(--azul); text-shadow:0 0 8px rgba(100,150,255,.8); }
 </style>
 </head>
 <body>
+<header><h1>COMPAPOL • AWAY</h1></header>
 
-<h1>COMPAPOL • AWAY</h1>
-
-<details class="accordion" open>
-  <summary><span class="acc-title">Filiaciones</span></summary>
-  <div style="padding:10px;">
-    <select id="fiCondicion" required>
-      <option value="" disabled selected>Condición *</option>
-      <option>detenido</option>
-      <option>identificado</option>
-      <option>investigado</option>
-      <option>perjudicado</option>
-      <option>requirente</option>
-      <option>testigo</option>
-    </select>
-    <select id="fiSexo" required>
-      <option value="" disabled selected>Sexo *</option>
-      <option>Masculino</option>
-      <option>Femenino</option>
-    </select>
-    <input id="fiNombre" placeholder="Nombre">
-    <input id="fiApellidos" placeholder="Apellidos">
-    <input id="fiTipoDoc" placeholder="Tipo Documento">
-    <input id="fiNumDoc" placeholder="Número Documento">
-    <input id="fiFecha" placeholder="Fecha Nacimiento">
-    <input id="fiPadres" placeholder="Nombre de los Padres">
-    <input id="fiDomicilio" placeholder="Domicilio">
+<div class="wrap glass">
+  <!-- Botonera NEÓN -->
+  <div class="bar" id="topBar">
+    <!-- 🎤 Grabar -->
+    <button id="btnRec" class="btn-round" title="Grabar" aria-label="Grabar">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1"/><path d="M12 19v3"/></svg>
+    </button>
+    <!-- ⏸️ Parar -->
+    <button id="btnRecStop" class="btn-round" title="Parar" aria-label="Parar">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="5" width="5" height="14" rx="1"/><rect x="14" y="5" width="5" height="14" rx="1"/></svg>
+    </button>
+    <!-- 🏛️ Redacción -->
+    <button id="btnDraft" class="btn-round" title="Redacción policial" aria-label="Redacción">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 10h18"/><path d="M6 10v8h12v-8"/><path d="M8 10V7l4-3 4 3v3"/></svg>
+    </button>
+    <!-- 🧹 Limpiar -->
+    <button id="btnClear" class="btn-round" title="Limpiar" aria-label="Limpiar">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6l-2 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11l1 6"/><path d="M14 11l-1 6"/></svg>
+    </button>
+    <!-- 💾 Guardar -->
+    <button id="btnDownload" class="btn-round" title="Guardar JSON" aria-label="Guardar">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+    </button>
   </div>
-</details>
 
-<h3>VERSIÓN POLICIAL</h3>
-<textarea id="txtOut"></textarea>
+  <!-- Filiaciones -->
+  <div class="accordion" id="accFili">
+    <div class="acc-h"><span class="acc-title">FILIACIONES</span></div>
+    <div class="acc-c" id="accBody">
+      <div class="grid2">
+        <select id="fiCondicion" required>
+          <option value="" disabled selected>Condición *</option>
+          <option>detenido</option><option>identificado</option><option>investigado</option>
+          <option>perjudicado</option><option>requirente</option><option>testigo</option>
+        </select>
+        <select id="fiSexo" required>
+          <option value="" disabled selected>Sexo *</option>
+          <option>Masculino</option><option>Femenino</option>
+        </select>
+        <input id="fiNombre" type="text" placeholder="Nombre">
+        <input id="fiApellidos" type="text" placeholder="Apellidos (MAYÚSC.)">
+        <input id="fiNacionalidad" type="text" placeholder="Nacionalidad">
+        <input id="fiTipoDoc" type="text" placeholder="Tipo documento">
+        <input id="fiNumDoc" type="text" placeholder="Nº Documento">
+        <input id="fiFechaNac" type="text" placeholder="Fecha Nacimiento">
+        <input id="fiLugarNac" type="text" placeholder="Lugar de nacimiento">
+        <input id="fiPadres" type="text" placeholder="Nombre de los Padres">
+        <input id="fiDom" type="text" placeholder="Domicilio">
+        <input id="fiTel" type="text" placeholder="Teléfono">
+      </div>
+      <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button id="btnAddFili" class="btn-round mini" title="Guardar ficha">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        </button>
+        <label class="btn-round mini" for="fileFili" title="Importar JSON" style="display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+        </label>
+        <input id="fileFili" type="file" accept="application/json" style="display:none">
+      </div>
+      <div class="list" id="filiList"></div>
+    </div>
+  </div>
 
-<div class="bar">
-  <button id="btnRec"       class="btn-round" title="Grabar">🎤</button>
-  <button id="btnRecStop"   class="btn-round" title="Parar">⏸️</button>
-  <button id="btnDraft"     class="btn-round" title="Redacción">🏛️</button>
-  <button id="btnClear"     class="btn-round" title="Limpiar">🧹</button>
-  <button id="btnDownload"  class="btn-round" title="Guardar JSON">💾</button>
+  <!-- Texto dictado -->
+  <textarea id="txt"></textarea>
+  <div id="status" class="status"></div>
+
+  <h3 class="section-title">VERSIÓN POLICIAL</h3>
+  <div id="out" class="out" contenteditable="true"></div>
 </div>
+
 <script>
-/* ===== Config ===== */
+/* ==================== CONFIG ==================== */
 const API_BASE = "https://compa-movil-backend.onrender.com";
 
-/* ===== Util ===== */
+/* ==================== UTIL / ESTADO ==================== */
 const $ = s => document.querySelector(s);
 const statusEl = $('#status'), txt = $('#txt'), out = $('#out');
 function setStatus(s){ statusEl.textContent = s; }
 function flashRed(el){ el.classList.add('flash-red'); setTimeout(()=>el.classList.remove('flash-red'), 900); }
 function closeAccordion(){ $('#accBody').classList.remove('show'); }
 
-/* ===== Storage ===== */
+/* ==================== STORAGE ==================== */
 const LSK_MAP="compapol.fili.map", LSK_FULL="compapol.fili.full", LSK_EXTRAS="compapol.extras";
 const load = k => { try{ const v=JSON.parse(localStorage.getItem(k)||"{}"); return v&&typeof v==="object"?v:{}; }catch{ return {}; } };
 const save = (k,v)=> localStorage.setItem(k, JSON.stringify(v||{}));
-const loadMap = ()=>load(LSK_MAP), saveMap=v=>save(LSK_MAP,v);
+const loadMap = ()=>load(LSK_MAP),  saveMap=v=>save(LSK_MAP,v);
 const loadFull= ()=>load(LSK_FULL), saveFull=v=>save(LSK_FULL,v);
 const loadExtras=()=>load(LSK_EXTRAS), saveExtras=v=>save(LSK_EXTRAS,v);
 
-/* ===== Texto helpers ===== */
+/* ==================== CAPITALIZACIÓN ==================== */
 const STOPWORDS=new Set(["de","del","la","las","los","y","o","u","al","el","en","da","do","das","dos"]);
-const tc=s=>s? s.trim().split(/\s+/).map((w,i)=>{const a=w.toLowerCase();return i>0&&STOPWORDS.has(a)?a:a[0].toUpperCase()+a.slice(1)}).join(" "):"";
+const tc=s=>!s?"":s.trim().split(/\s+/).map((w,i)=>{const a=w.toLowerCase();return i>0&&STOPWORDS.has(a)?a:a[0].toUpperCase()+a.slice(1)}).join(" ");
 const ddmmyyyy=s=>{ if(!s) return ""; const t=s.trim(); if(/^\d{2}\/\d{2}\/\d{4}$/.test(t)) return t; if(/^\d{4}-\d{2}-\d{2}$/.test(t)){const [Y,M,D]=t.split("-"); return `${D}/${M}/${Y}`;} return t; };
 const norm=v=>({ ...v,
-  nombre: tc(v.nombre||""), nacionalidad: tc(v.nacionalidad||""), lugar_nacimiento: tc(v.lugar_nacimiento||""),
-  padres: tc(v.padres||""), domicilio: tc(v.domicilio||""), apellidos: (v.apellidos||"").toUpperCase(),
-  fecha_nacimiento: ddmmyyyy(v.fecha_nacimiento||"")
+  nombre:tc(v.nombre||""), nacionalidad:tc(v.nacionalidad||""), lugar_nacimiento:tc(v.lugar_nacimiento||""),
+  padres:tc(v.padres||""), domicilio:tc(v.domicilio||""), apellidos:(v.apellidos||"").toUpperCase(), fecha_nacimiento:ddmmyyyy(v.fecha_nacimiento||"")
 });
 
-/* ===== Inserción ===== */
+/* ==================== INSERCIÓN ==================== */
 function insertAtCursor(el, text){
   const s=el.selectionStart??el.value.length, e=el.selectionEnd??el.value.length;
   el.value = el.value.slice(0,s) + text + el.value.slice(e);
@@ -210,11 +222,11 @@ function insertAtCursor(el, text){
 }
 function insertHtmlAtCursorInContentEditable(container, html){
   container.focus(); const sel=window.getSelection(); if(!sel||!sel.rangeCount){ container.insertAdjacentHTML('beforeend', html); return; }
-  const r=sel.getRangeAt(0), t=document.createElement('div'); t.innerHTML=html; const f=document.createDocumentFragment();
-  let n; while((n=t.firstChild)) f.appendChild(n); r.deleteContents(); r.insertNode(f);
+  const r=sel.getRangeAt(0), t=document.createElement('div'); t.innerHTML=html; const f=document.createDocumentFragment(); let n;
+  while((n=t.firstChild)) f.appendChild(n); r.deleteContents(); r.insertNode(f);
 }
 
-/* ===== Ficha → frase ===== */
+/* ==================== FORMATO FRASE ==================== */
 function frase(x){
   const n=(x.nombre||"").trim(), a=(x.apellidos||"").trim(); if(!n&&!a) return "";
   const seg=[]; seg.push([n,a].filter(Boolean).join(" ").trim());
@@ -223,13 +235,13 @@ function frase(x){
   const sx=(x.sexo||"").toLowerCase(), nac=sx.startsWith("f")?"nacida":sx.startsWith("m")?"nacido":"nacido/a";
   const lug=(x.lugar_nacimiento||"").trim(), f=ddmmyyyy(x.fecha_nacimiento||""); const sN=[]; if(lug) sN.push(`en ${lug}`); if(f) sN.push(`el ${f}`);
   if(sN.length) seg.push(`${nac} ${sN.join(" ")}`);
-  if(x.padres?.trim()){ const hijo=sx.startsWith("f")?"hija":sx.startsWith("m")?"hijo":"hijo/a"; seg.push(`${hijo} de ${x.padres.trim()}`); }
+  if(x.padres?.trim()){ const hijo=sx.startsWith("f")?"hija":sx.startsWith("m")?"hijo":"hijo/a"; segs=seg.push(`${hijo} de ${x.padres.trim()}`); }
   if(x.domicilio?.trim()) seg.push(`domicilio en ${x.domicilio.trim()}`);
   if(x.telefono?.trim()) seg.push(`teléfono ${x.telefono.trim()}`);
   return seg.join(", ")+".";
 }
 
-/* ===== UI Filiaciones ===== */
+/* ==================== UI FILIACIONES ==================== */
 const list=$('#filiList');
 function label(v){ const n=[(v.nombre||"").trim(),(v.apellidos||"").trim()].filter(Boolean).join(" "); return n? n.toUpperCase():"(SIN NOMBRE)"; }
 function rebuild(){
@@ -240,22 +252,25 @@ function rebuild(){
     const l=document.createElement('div'); l.textContent=label(v);
     const r=document.createElement('div'); r.style.display='flex'; r.style.gap='6px';
 
-    const bT=document.createElement('button'); bT.className='btn'; bT.style.height='32px'; bT.textContent='➕T';
-    bT.title='Insertar en Texto'; bT.onclick=e=>{ flashRed(e.currentTarget); const t=frase(v); if(t) insertAtCursor(txt, t+" "); closeAccordion(); };
+    const bT=document.createElement('button'); bT.className='btn-round mini'; bT.title='Insertar en Texto';
+    bT.innerHTML='<svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg>';
+    bT.onclick=e=>{ flashRed(e.currentTarget); const t=frase(v); if(t) insertAtCursor(txt, t+" "); closeAccordion(); };
 
-    const bR=document.createElement('button'); bR.className='btn'; bR.style.height='32px'; bR.textContent='➕R';
-    bR.title='Insertar en Versión Policial'; bR.onclick=e=>{ flashRed(e.currentTarget); const t=frase(v); if(t) insertHtmlAtCursorInContentEditable(out, `<p>— Que ${t}</p>`); closeAccordion(); };
+    const bR=document.createElement('button'); bR.className='btn-round mini'; bR.title='Insertar en Versión Policial';
+    bR.innerHTML='<svg class="icon" viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M8 8l4-3 4 3"/><path d="M8 12v6h8v-6"/></svg>';
+    bR.onclick=e=>{ flashRed(e.currentTarget); const t=frase(v); if(t) insertHtmlAtCursorInContentEditable(out, `<p>— Que ${t}</p>`); closeAccordion(); };
 
-    const bDel=document.createElement('button'); bDel.className='btn'; bDel.style.height='32px'; bDel.textContent='🗑️';
-    bDel.title='Eliminar ficha'; bDel.onclick=e=>{ flashRed(e.currentTarget); const mm=loadMap(); delete mm[id]; localStorage.setItem('compapol.fili.map',JSON.stringify(mm)); rebuild(); setStatus('🗑️ Ficha eliminada.'); };
+    const bDel=document.createElement('button'); bDel.className='btn-round mini'; bDel.title='Eliminar ficha';
+    bDel.innerHTML='<svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 6l1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12"/><path d="M10 11l1 6"/><path d="M14 11l-1 6"/></svg>';
+    bDel.onclick=e=>{ flashRed(e.currentTarget); const mm=loadMap(); delete mm[id]; saveMap(mm); rebuild(); setStatus('🗑️ Ficha eliminada.'); };
 
     r.appendChild(bT); r.appendChild(bR); r.appendChild(bDel);
     row.appendChild(l); row.appendChild(r); list.appendChild(row);
   }
-  localStorage.setItem('compapol.fili.map', JSON.stringify(m));
+  saveMap(m);
 }
 
-/* ===== Form / Import / Export ===== */
+/* ==================== FORM / IMPORT / EXPORT ==================== */
 const fiCondicion=$('#fiCondicion'), fiSexo=$('#fiSexo'), fiNombre=$('#fiNombre'), fiApellidos=$('#fiApellidos'),
       fiNacionalidad=$('#fiNacionalidad'), fiTipoDoc=$('#fiTipoDoc'), fiNumDoc=$('#fiNumDoc'),
       fiFechaNac=$('#fiFechaNac'), fiLugarNac=$('#fiLugarNac'), fiPadres=$('#fiPadres'),
@@ -304,7 +319,7 @@ $('#btnAddFili').addEventListener('click', e=>{
   rebuild(); setStatus("✅ Ficha guardada."); closeAccordion();
 });
 
-/* Importar */
+/* Importar (vincula completa con el mismo id) */
 fileFili.addEventListener('change', async ev=>{
   const f=ev.target.files?.[0]; if(!f) return;
   try{
@@ -331,8 +346,8 @@ fileFili.addEventListener('change', async ev=>{
   finally{ ev.target.value=""; }
 });
 
-/* Micrófono */
-const btnRec=$('#btnRec'), btnRecStop=$('#btnRecStop'), topBar=$('#topBar');
+/* Micrófono (Whisper) */
+const btnRec=$('#btnRec'), btnRecStop=$('#btnRecStop');
 let mediaRecorder=null, recChunks=[], recStream=null;
 async function startRec(e){
   try{
@@ -360,12 +375,16 @@ async function startRec(e){
   }catch(err){ setStatus('❌ Micrófono no disponible: '+(err.message||err)); }
 }
 function stopRec(e){ try{ flashRed(e.currentTarget); if(mediaRecorder && mediaRecorder.state!=='inactive') mediaRecorder.stop(); }catch{} }
-topBar.addEventListener('click', closeAccordion);
+btnRec.addEventListener('click', startRec);
+btnRecStop.addEventListener('click', stopRec);
+
+/* Redacción / Limpiar / Guardar */
 $('#btnDraft').addEventListener('click', async e=>{
   flashRed(e.currentTarget); closeAccordion();
   try{
     setStatus('⏳ Generando redacción…');
-    const r=await fetch(`${API_BASE}/api/police-draft`,{method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texto: txt.value||"", filiaciones:[], objetos:[], fichas_resueltas:[] })});
+    const r=await fetch(`${API_BASE}/api/police-draft`,{method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ texto: txt.value||"", filiaciones:[], objetos:[], fichas_resueltas:[] })});
     if(!r.ok){ let msg='HTTP '+r.status; try{const j=await r.json(); if(j?.error) msg+=' · '+j.error;}catch{} throw new Error(msg); }
     const { html }=await r.json(); out.innerHTML=html||''; setStatus('✅ Redacción lista.');
   }catch(err){ setStatus('❌ Error en redacción: '+(err.message||err)); }
@@ -373,8 +392,7 @@ $('#btnDraft').addEventListener('click', async e=>{
 $('#btnClear').addEventListener('click', e=>{ flashRed(e.currentTarget); closeAccordion(); txt.value=''; out.innerHTML=''; setStatus('🧹 Limpio.'); });
 $('#btnDownload').addEventListener('click', e=>{
   flashRed(e.currentTarget); closeAccordion();
-  const map=loadMap(), full=loadFull(), extras=loadExtras();
-  const arr=[];
+  const map=loadMap(), full=loadFull(), extras=loadExtras(); const arr=[];
   for(const [id,vis] of Object.entries(map)){
     const f=full[id];
     if(f&&typeof f==="object"){
@@ -400,10 +418,8 @@ $('#btnDownload').addEventListener('click', e=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"})); a.download=`Compa ${dd}-${mm}-${aa} ${hh}-${mi}h.json`; a.click();
   setStatus('💾 Guardado.');
 });
-btnRec.addEventListener('click', startRec);
-btnRecStop.addEventListener('click', stopRec);
 
-/* Acordeón */
+/* Acordeón toggle */
 document.querySelector('#accFili .acc-h').addEventListener('click',()=>$('#accBody').classList.toggle('show'));
 
 /* Init */
