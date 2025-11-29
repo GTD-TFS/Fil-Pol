@@ -1,0 +1,1239 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>FILIATRON</title>
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0b1220">
+
+  <style>
+      :root{
+      --bg:#0b1220; --fg:#e6eefc; --accent:#0979f1;
+      --card:rgba(255,255,255,.08); --border:rgba(255,255,255,.18);
+      --green:#22c57b; --red:#ff5656;
+      /* ↓↓↓ NUEVO: control del brillo del título ↓↓↓ */
+      --title-glow: 0.35;        /* 0–1: intensidad del brillo */
+      --title-glow-size: 18px;  /* tamaño del halo (px) */
+    }
+    
+    *{box-sizing:border-box}
+    body{
+      margin:0;padding:20px;
+      font-family:system-ui,"Segoe UI",Arial;
+      color:var(--fg);
+      /* Fondo con imagen (se gestiona con pseudo-elementos para asegurar visibilidad) */
+      background:none;
+      min-height:100dvh;
+    }
+    /* Capa de foto de fondo asegurada */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:url('./verde.jpg') center / cover no-repeat;
+      z-index:-2;
+      transform:translateZ(0); /* fuerza pintar y evita glitches de backdrop-filter */
+    }
+    /* Velo oscuro encima de la foto (controla visibilidad del fondo) */
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:linear-gradient(180deg, rgba(11,18,32,.85), rgba(11,18,32,.010));
+      z-index:-1;
+      pointer-events:none;
+    }
+    h1{
+  margin:0 0 14px;
+  font-size:32px;
+  line-height:1.1;
+  letter-spacing:.6px;
+  font-weight:800;
+  background:linear-gradient(92deg, #e6eefc, #8fc8ff 45%, #197ce5 80%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,.25),
+    0 0 8px rgba(255,255,255,var(--title-glow)),
+    0 0 18px rgba(255,255,255, calc(var(--title-glow)*0.6));
+  text-align:center;
+  position: relative;
+  isolation: isolate;                   /* aísla el blend del halo */
+  -webkit-text-stroke: .6px rgba(255,255,255,.35);  /* bordes más nítidos */
+  filter: saturate(1.15);               /* refuerza el degradado */
+}
+
+/* Halo que suma luz sin “lavar” el relleno */
+h1::after{
+  content: attr(data-title);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: #ffffff;
+  opacity: calc(var(--title-glow) * 0.85);
+  filter: blur(var(--title-glow-size)) brightness(1.2) saturate(1.3);
+  mix-blend-mode: screen;               /* suma luz respetando el color del texto */
+  pointer-events: none;
+}
+    .grid{display:grid;gap:16px;max-width:1100px;margin:0 auto} /* centrado del layout */
+    .two{grid-template-columns:1fr}
+    @media(min-width:900px){.two{grid-template-columns:1fr 1fr}}
+    .card{
+      background:rgba(11,18,32,.08);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:16px;
+      backdrop-filter:blur(10px);
+      box-shadow:0 4px 14px rgba(0,0,0,.35);
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center}
+    .row.center{justify-content:center}                   /* centrado de botones */
+    .btn{
+      border:none;
+      color:var(--fg);
+      background:transparent;              /* fondo totalmente transparente */
+      padding:10px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      box-shadow:0 0 18px rgba(9,121,241,.85);  /* resplandor azul difuso (no aro) */
+      transition:box-shadow .18s ease, transform .12s ease;
+    }
+    .btn.secondary{
+      border:none;
+      background:transparent;                        /* sin relleno */
+      box-shadow:0 0 16px rgba(255,255,255,.55);    /* resplandor blanco/gris suave */
+    }
+    /* Comparecencia GPT en morado */
+    #gptComparecencia{
+      border:none !important;
+      background:transparent;                           /* sin relleno morado */
+      box-shadow:0 0 20px rgba(138,77,255,.95);        /* resplandor morado difuso */
+    }
+    #gptComparecencia:hover{ box-shadow:0 6px 18px rgba(138,77,255,.25) }
+    #gptComparecencia:focus{ outline:2px solid rgba(138,77,255,.45); outline-offset:2px }
+    /* Botón naranja: agregar filiación */
+    #addFiliacion{
+      border:none !important;
+      background:transparent;                           /* sin relleno naranja */
+      box-shadow:0 0 20px rgba(255,140,26,.95);        /* resplandor naranja difuso */
+    }
+    #addFiliacion:hover{
+      box-shadow:0 0 26px rgba(255,140,26,1);
+      transform:translateY(-1px);
+    }
+    #addFiliacion:focus{ outline:2px solid rgba(255,140,26,.5); outline-offset:2px; }
+
+    /* Escoba en rojo */
+    #clearForm{
+      border:none !important;
+      background:transparent;                           /* sin relleno rojo */
+      box-shadow:0 0 20px rgba(255,86,86,.95);         /* resplandor rojo difuso */
+    }
+    #clearForm:hover{
+      box-shadow:0 0 26px rgba(255,86,86,1);
+      transform:translateY(-1px);
+    }
+    #clearForm:focus{ outline:2px solid rgba(255,86,86,.55); outline-offset:2px; }
+
+    /* Botón cargar cifrado (verde) */
+    #loadEncrypted{
+      border:none !important;
+      background:transparent;                           /* sin relleno verde */
+      box-shadow:0 0 20px rgba(34,197,123,.95);        /* resplandor verde difuso */
+    }
+    #loadEncrypted:hover{ box-shadow:0 6px 18px rgba(34,197,123,.25); }
+    #loadEncrypted:focus{ outline:2px solid rgba(34,197,123,.5); outline-offset:2px; }
+    .fields{display:grid;gap:12px;grid-template-columns:1fr}
+    @media(min-width:760px){.fields{grid-template-columns:1fr 1fr}}
+    label{font-size:12px;margin-bottom:4px;color:#cfe0ff;display:block}
+    input,select,textarea{
+      width:100%;padding:10px;border-radius:12px;background:rgba(10,16,28,.28);
+      color:var(--fg);border:0.5px solid var(--border);outline:none;transition:border-color .15s
+    }
+    textarea{min-height:120px;resize:vertical}
+    input.valid,select.valid,textarea.valid{border-color:var(--green)!important}
+input.invalid,select.invalid,textarea.invalid{border-color:var(--red)!important}
+    .span2{grid-column:1/-1}
+    .badge{padding:4px 8px;border-radius:9999px;background:rgba(255,255,255,.12);border:1px solid var(--border);font-size:12px}
+    .badge{ box-shadow:0 2px 10px rgba(77,163,255,.12), inset 0 0 0 1px rgba(255,255,255,.05) }
+    .btn:hover{
+      box-shadow:0 0 24px rgba(77,163,255,1);
+      transform:translateY(-1px);
+    }
+    .btn:focus{ outline:2px solid rgba(77,163,255,.45); outline-offset:2px }
+    .grow{flex:1}
+    ul.list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+    ul.list li{
+      position:relative;
+      border-radius:10px;
+      padding:6px 10px;
+      background:rgba(10,16,28,.75);
+      font-size:12px;
+      border:1px solid transparent; /* el borde visible lo hace el pseudo */
+      overflow:hidden;
+    }
+    ul.list li::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      padding:1px;
+      border-radius:inherit;
+      background:linear-gradient(135deg,#22c55e,#facc15); /* verde → amarillo */
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor;
+      mask-composite:exclude;
+      pointer-events:none;
+    }
+    ul.list li button{margin-left:8px}
+
+    /* Campo con duda (modo B, borde amarillo) */
+    input.uncertain, select.uncertain, textarea.uncertain{
+      border-color:#ffc107 !important;
+      box-shadow:0 0 0 2px rgba(255,193,7,.18) inset;
+    }
+  </style>
+  <link rel="preload" as="image" href="aq.png">
+</head>
+<body>
+<h1 data-title="FILIATRON">FILIATRON</h1>
+
+<div class="grid two">
+  <!-- ACCIONES -->
+  <div class="card">
+    <div class="row center">
+      <button class="btn" id="gptComparecencia" title="Abrir Comparecencia GPT">Comparecencia GPT 🤖</button>
+    </div>
+
+    <div class="row center" style="margin-top:10px">
+      <span class="badge">Filiaciones: <span id="countF">0</span></span>
+      <ul class="list" id="listaF"></ul>
+    </div>
+  </div>
+
+  <!-- COMPARECENCIA + CAMPOS -->
+  <div class="card">
+    <div class="fields">
+      <div class="span2">
+        <!-- Texto 'Comparecencia (DOC)' eliminado -->
+        <div class="row center" style="margin:6px 0 8px 0">
+          <button class="btn" id="integrarDoc">Pegar comparecencia 📋</button>
+        </div>
+        <textarea id="Doc"></textarea>
+        <div class="row center" style="margin:8px 0 6px 0">
+          <button class="btn" id="readAnalyze">Integrar DNI 🪪</button>
+          <button class="btn" id="voiceMode" title="Activar dictado por voz">Voz 🎤</button>
+        </div>
+      </div>
+
+      <!-- Ficha de filiación actual -->
+      <div><label>Nombre</label><input id="Nombre"></div>
+      <div><label>Apellidos (MAYÚSCULAS)</label><input id="Apellidos"></div>
+      <div><label>Tipo de documento</label><input id="Tipo"></div>
+      <div><label>Nº documento</label><input id="Numero"></div>
+      <div><label>Sexo</label>
+        <select id="Sexo"><option></option><option>MASCULINO</option><option>FEMENINO</option></select>
+      </div>
+      <div><label>Nacionalidad</label><input id="Nacionalidad"></div>
+      <div class="span2"><label>Nombre de los Padres</label><input id="Padres"></div>
+      <div><label>Fecha de nacimiento</label><input id="Nacimiento"></div>
+      <div><label>Lugar de nacimiento</label><input id="Lugar"></div>
+      <div class="span2"><label>Domicilio</label><input id="Domicilio"></div>
+      <div><label>Teléfono</label><input id="Telefono" inputmode="numeric" pattern="[0-9 ]*"></div>
+      <div><label>Condición (oblig.)</label>
+        <select id="Condicion">
+          <option></option><option>Requirente</option><option>Perjudicado</option>
+          <option>Testigo</option><option>Identificado</option>
+        </select>
+      </div>
+
+      <div class="span2"></div>
+      <div class="span2 row center" style="margin-top:6px">
+        <button class="btn" id="addFiliacion">👤 Agregar filiación al expediente</button>
+        <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
+        <button class="btn" id="download">⬇️ Descargar cifrado 🔐 </button>
+        <button class="btn secondary" id="loadEncrypted">⬆️ Cargar cifrado 🔐 </button>
+        <input type="file" id="encryptedInput" accept=".enc,.txt,.json" style="display:none">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======================================================
+// FILIATRON — PARSER NS (1 sola línea, sin espacios)
+// ======================================================
+
+const expediente = { doc: "", filiaciones: [] };
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+function toBase64(arr){
+  let str = "";
+  for(let i=0;i<arr.length;i++) str += String.fromCharCode(arr[i]);
+  return btoa(str);
+}
+
+function fromBase64(str){
+  const bin = atob(str);
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+async function deriveKey(password, salt){
+  const pwKey = await crypto.subtle.importKey(
+    "raw",
+    textEncoder.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 200000,
+      hash: "SHA-256",
+    },
+    pwKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt","decrypt"]
+  );
+}
+
+async function encryptJSON(obj, password){
+  const jsonStr = JSON.stringify(obj);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv   = crypto.getRandomValues(new Uint8Array(12));
+  const key  = await deriveKey(password, salt);
+
+  const cipherBuf = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    textEncoder.encode(jsonStr)
+  );
+
+  const cipherBytes = new Uint8Array(cipherBuf);
+  const full = new Uint8Array(salt.length + iv.length + cipherBytes.length);
+  full.set(salt, 0);
+  full.set(iv, salt.length);
+  full.set(cipherBytes, salt.length + iv.length);
+
+  return toBase64(full);
+}
+
+async function decryptJSON(cipherBase64, password){
+  const full = fromBase64((cipherBase64 || "").trim());
+  if (full.length < 16 + 12 + 1) throw new Error("Datos insuficientes");
+
+  const salt = full.slice(0, 16);
+  const iv   = full.slice(16, 28);
+  const data = full.slice(28);
+
+  const key = await deriveKey(password, salt);
+
+  const plainBuf = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    key,
+    data
+  );
+
+  const jsonStr = textDecoder.decode(plainBuf);
+  return JSON.parse(jsonStr);
+}
+
+// ---------- Helpers texto ----------
+const tcase = s => (s||"").toLowerCase().replace(/\b([A-Za-zÁÉÍÓÚÜÑáéíóúüñ])/g,c=>c.toUpperCase());
+const normalize = s => (s||"").normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+const normAZ = s => (s||"").normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()
+  .replace(/[^A-ZÑÁÉÍÓÚÜ\s-]/g,'').replace(/\s+/g,' ').trim();
+
+// Construye NS (sin espacios) y mapa de índices a RAW
+function buildNS(raw){
+  const up0 = normalize(raw||"");
+  // Normaliza variantes OCR del separador MRZ "<" (japonés 'く' y full-width '＜')
+  const up = up0.replace(/く/g,'<').replace(/＜/g,'<');
+  let NS = ""; const MAP = [];
+  for (let i=0;i<up.length;i++){
+    const ch = up[i];
+    if (/\s/.test(ch)) continue;
+    NS += ch; MAP.push(i);
+  }
+  return { NS, MAP, RAW: raw||"", UPROW: up };
+}
+
+// ---------- Distancia (fuzzy) ----------
+function damerauLevenshtein(a,b,limit=2){
+  a=a||""; b=b||""; if(a===b) return 0; if(!a||!b) return Math.min(limit+1, Math.max(a.length,b.length));
+  const al=a.length, bl=b.length; if (Math.abs(al-bl)>limit) return limit+1;
+  const dp=Array.from({length:al+1},()=>Array(bl+1).fill(0));
+  for(let i=0;i<=al;i++) dp[i][0]=i; for(let j=0;j<=bl;j++) dp[0][j]=j;
+  for(let i=1;i<=al;i++){
+    let minRow=limit+1;
+    for(let j=1;j<=bl;j++){
+      const cost=a[i-1]===b[j-1]?0:1;
+      let v=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+      if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]) v=Math.min(v, dp[i-2][j-2]+1);
+      dp[i][j]=v; if(v<minRow) minRow=v;
+    }
+    if(minRow>limit) return limit+1;
+  }
+  return dp[al][bl];
+}
+
+// --- Helper: localizar etiqueta con hasta 2 errores OCR (aprox) ---
+function findApproxTag(ns, tag, maxDist = 2) {
+  const T = tag.toUpperCase().replace(/\s+/g,'');
+  const L = T.length;
+  let best = { idx: -1, d: maxDist + 1 };
+  for (let i = 0; i <= ns.length - L; i++) {
+    const win = ns.slice(i, i + L);
+    const d = damerauLevenshtein(win, T, maxDist);
+    if (d <= maxDist && (d < best.d || best.idx === -1)) {
+      best = { idx: i, d };
+      if (d === 0) break;
+    }
+  }
+  return best.idx;
+}
+
+// ---------- Librerías (municipios / provincias / nombres) ----------
+let MUNICIPIOS_SET = new Set([
+  // Fallback mínimo (por si fetch falla en file://)
+  "MADRID","ALCOBENDAS","BARCELONA","VALENCIA","SEVILLA","MALAGA","MURCIA",
+  "SANTA CRUZ DE TENERIFE","LAS PALMAS","ARONA","ADEJE","TELDE","VIGO","OVIEDO","GIJON","BILBAO","VALLADOLID","SALAMANCA","TOLEDO"
+].map(normalize));
+
+let MUNICIPIOS_NOSPACE = new Map([...MUNICIPIOS_SET].map(m => [m.replace(/\s+/g,''), m]));
+
+const PROVINCIAS = [
+  "A CORUÑA","ÁLAVA","ALAVA","ALBACETE","ALICANTE","ALMERÍA","ALMERIA","ASTURIAS","ÁVILA","AVILA",
+  "BADAJOZ","BARCELONA","BIZKAIA","VIZCAYA","BURGOS","CÁCERES","CACERES","CÁDIZ","CADIZ","CANTABRIA",
+  "CASTELLÓN","CASTELLON","CIUDAD REAL","CÓRDOBA","CORDOBA","CUENCA","GIRONA","GERONA","GRANADA",
+  "GUADALAJARA","GUIPÚZCOA","GUIPUZCOA","GIPUZKOA","HUELVA","HUESCA","ILLES BALEARS","ISLAS BALEARES",
+  "JAÉN","JAEN","LA RIOJA","LAS PALMAS","LEÓN","LEON","LLEIDA","LUGO","MADRID","MÁLAGA","MALAGA",
+  "MURCIA","NAVARRA","NAFARROA","OURENSE","ORENSE","PALENCIA","PONTEVEDRA","SALAMANCA",
+  "SANTA CRUZ DE TENERIFE","SEGOVIA","SEVILLA","SORIA","TARRAGONA","TERUEL","TOLEDO",
+  "VALENCIA","VALLADOLID","ZAMORA","ZARAGOZA","CEUTA","MELILLA"
+].map(normalize);
+const PROV_SET = new Set(PROVINCIAS);
+const PROV_NOSPACE = new Map([...PROV_SET].map(p => [p.replace(/\s+/g,''), p]));
+
+let NOMBRES_SET = new Set(); // se cargará de nombres.json si se puede
+
+async function initMunicipios(){
+  try{
+    const res = await fetch('municipios.json', {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const arr = await res.json();
+    if (Array.isArray(arr) && arr.length){
+      MUNICIPIOS_SET = new Set(arr.map(x => normalize(String(x))));
+      MUNICIPIOS_NOSPACE = new Map([...MUNICIPIOS_SET].map(m => [m.replace(/\s+/g,''), m]));
+      console.log(`Municipios cargados: ${MUNICIPIOS_SET.size}`);
+    }
+  }catch(e){
+    console.warn('municipios.json no accesible (¿file:// / CORS?). Uso fallback.', e);
+  }
+}
+async function initNombres(){
+  try{
+    const res = await fetch('nombres.json', {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const arr = await res.json();
+    if (Array.isArray(arr) && arr.length){
+      // nombres.json tiene líneas tipo "AARON,21540,11.0" o nombres compuestos
+      // extrae solo el campo de nombre (antes de la primera coma)
+      const list = arr.map(line => String(line).split(',')[0]).filter(Boolean);
+      NOMBRES_SET = new Set(list.map(normalize));
+      console.log(`Nombres cargados: ${NOMBRES_SET.size}`);
+    }
+  }catch(e){
+    console.warn('nombres.json no accesible (¿file:// / CORS?). Padres quedarán en duda si no hay set.', e);
+  }
+}
+
+// ---------- Matching municipio / provincia ----------
+function matchMunicipioSuffixNS(ns){
+  if (!ns || !MUNICIPIOS_NOSPACE.size) return null;
+  const maxLen = Math.min(32, ns.length);
+  for (let len = maxLen; len >= 4; len--) {
+    const sub = ns.slice(ns.length - len);
+    const hit = MUNICIPIOS_NOSPACE.get(sub);
+    if (hit) return { canon: hit, index: ns.length - len };
+  }
+  return null;
+}
+function findProvinceAfter(ns, start=0){
+  if (!ns) return null;
+  let best = null;
+  for (const [pNS, canon] of PROV_NOSPACE.entries()){
+    const idx = ns.indexOf(pNS, start);
+    if (idx !== -1){
+      if (!best || idx < best.index || (idx === best.index && pNS.length > best.pNS.length)){
+        best = { index: idx, canon, pNS };
+      }
+    }
+  }
+  return best;
+}
+function matchMunicipio(raw){
+  const cand = normAZ(raw);
+  const can  = normalize(cand);
+  if (MUNICIPIOS_SET.has(can)) return {canon:cand, approx:false, found:true};
+  let best=null, bestD=3;
+  for (const m of MUNICIPIOS_SET){
+    const d = damerauLevenshtein(can, m, 2);
+    if (d<bestD){ bestD=d; best=m; if (d===0) break; }
+  }
+  if (best!=null && bestD<=2) return {canon: best.replace(/\s+/g,' ').trim(), approx:true, found:true};
+  return {canon:cand, approx:false, found:false};
+}
+
+// ---------- MRZ helpers ----------
+function mapDigit(ch){
+  if (/[0-9]/.test(ch)) return ch;
+  const t = ch.toUpperCase();
+  if (t==='O'||t==='Q') return '0';
+  if (t==='I'||t==='L') return '1';
+  if (t==='Z') return '2';
+  if (t==='S') return '5';
+  if (t==='B') return '8';
+  return '0';
+}
+
+// ---------- Parser principal (NS) ----------
+function parseByRules(ocrRaw){
+  // --- construir NS y, si empieza por EQUIPO, recortar hasta DOMICILIO ---
+  {
+    const built = buildNS(ocrRaw);
+    let NS0 = built.NS, MAP0 = built.MAP, RAW0 = built.RAW;
+
+    // Si la cadena NS empieza con EQUIPO... eliminar "EQUIPO" + alfanumérico hasta "DOMICILIO"
+    if (NS0.startsWith('EQUIPO')) {
+      const idxDomStart = NS0.indexOf('DOMICILIO');
+      if (idxDomStart !== -1) {
+        NS0  = NS0.slice(idxDomStart);
+        MAP0 = MAP0.slice(idxDomStart); // mantiene alineado el mapeo RAW
+      }
+    }
+
+    // Exponer a la función con los mismos nombres que usas abajo
+    var NS = NS0, MAP = MAP0, RAW = RAW0;
+  }
+
+  // Anclajes
+  // Normaliza confusiones OCR 1/l→I, 0/O→O, 5→S, Q/C→D (reemplazo 1:1, mantiene índice)
+  const canonNS = NS.replace(/[l1]/g,'I').replace(/[0Ｏ]/g,'O').replace(/5/g,'S').replace(/[QC]/g,'D');
+
+  // IDESP robusto con variantes OCR (I/1/L)(D/Q/C/O/0)E(S/5)P  + casos IOESP/IOSEP
+  const idxIDESP = (() => {
+    const hits = [];
+
+    // 1) patrón general con confusiones
+    const rx = /[IL1](?:D|Q|C|O|0)E(?:S|5)P/g;
+    for (const m of canonNS.matchAll(rx)) hits.push(m.index);
+
+    // 2) casos explícitos históricos
+    const a = canonNS.indexOf('IOESP'); if (a !== -1) hits.push(a);
+    const b = canonNS.indexOf('IOSEP'); if (b !== -1) hits.push(b);
+
+    if (!hits.length) return -1;
+    return Math.min(...hits);
+  })();
+
+  const idxEQUIPO = NS.indexOf('EQUIPO');
+  const idxDOM = NS.indexOf('DOMICILIO');
+
+  // Etiqueta de nacimiento (exacta primero)
+  let idxLUG = (()=>{ 
+    const a=NS.indexOf('LUGARDENACIMIENTO'); 
+    if (a!==-1) return a; 
+    return NS.indexOf('LAGARDENACIMIENTO');
+  })();
+
+  // Si no se encontró exacto, admite hasta 2 errores OCR
+  if (idxLUG === -1) {
+    const alt1 = findApproxTag(NS, 'LUGARDE NACIMIENTO', 2);
+    const alt2 = findApproxTag(NS, 'LAGARDE NACIMIENTO', 2);
+    idxLUG = (alt1 !== -1) ? alt1 : (alt2 !== -1 ? alt2 : -1);
+  }
+
+  const gStop = [idxIDESP, idxEQUIPO].filter(i=>i!==-1).reduce((m,i)=>Math.min(m,i), NS.length);
+
+  // --- DOMICILIO ---
+  let domicilio = "", domicilioUncertain = true;
+  if (idxDOM !== -1){
+    const start = idxDOM + 'DOMICILIO'.length;
+    const aLUG = idxLUG === -1 ? Infinity : idxLUG;
+    const aEQ  = idxEQUIPO === -1 ? Infinity : idxEQUIPO;
+    const aID  = idxIDESP === -1 ? Infinity : idxIDESP;
+    const pv   = findProvinceAfter(NS, start);
+    const anchorEnd = Math.min(aLUG, aEQ, aID, NS.length);
+    const end = (pv && pv.index < anchorEnd) ? pv.index : anchorEnd;
+
+    let domNS = NS.slice(start, end).trim();
+    const suf = matchMunicipioSuffixNS(domNS);
+
+    // reconstruir calle legible
+    const rawStart = MAP[start] ?? 0;
+    const rawEndStreet = (suf ? MAP[start + suf.index - 1] : MAP[end - 1]) ?? MAP[MAP.length-1];
+    let street = RAW.slice(rawStart, (rawEndStreet ?? rawStart)+1)
+      .replace(/\s*,\s*/g, ', ')
+      .replace(/\.([A-Za-zÁÉÍÓÚÜÑ])/g, '. $1')
+      .replace(/([A-Za-zÁÉÍÓÚÜÑ])(\d)/g, '$1 $2')
+      .replace(/(\d)([A-Za-zÁÉÍÓÚÜÑ])/g, '$1 $2')
+      .replace(/\s{2,}/g,' ')
+      .trim();
+
+    if (suf){
+      domicilio = `${street}, ${tcase(suf.canon)}`;
+      domicilioUncertain = false;
+    } else {
+      domicilio = street;
+    }
+  }
+
+  // --- LUGAR NACIMIENTO ---
+  let lugarNac = "", lugarUncertain = true;
+  if (idxLUG !== -1){
+    const start = idxLUG + (NS.startsWith('LUGARDENACIMIENTO', idxLUG) ? 'LUGARDENACIMIENTO'.length : 'LAGARDENACIMIENTO'.length);
+    const aH  = (()=>{ const i=NS.indexOf('HIJOADE', start); return i!==-1?i:Infinity;})();
+    const aID = idxIDESP !== -1 ? idxIDESP : Infinity;
+    const aEQ = idxEQUIPO !== -1 ? idxEQUIPO : Infinity;
+    const pv  = findProvinceAfter(NS, start);
+    // no invadir el "DE" de padres
+    const idxH = NS.indexOf('HIJOADE', start);
+    const limitDE = (idxH!==-1) ? (NS.indexOf('DE', idxH+'HIJOADE'.length) || Infinity) : Infinity;
+
+    const anchorEnd = Math.min(aH, aID, aEQ, NS.length, limitDE);
+    const end = (pv && pv.index < anchorEnd) ? pv.index : anchorEnd;
+
+    let seg = NS.slice(start, end);
+    const cutNum = seg.search(/[0-9]/); if (cutNum !== -1) seg = seg.slice(0, cutNum);
+
+    const mun = matchMunicipio(seg);
+    if (pv){
+      const prov = tcase(pv.canon);
+      const mc = mun.found ? tcase(mun.canon) : tcase(seg);
+      lugarUncertain = false;
+      lugarNac = (!seg || normalize(mc)===normalize(pv.canon)) ? prov : `${mc}, ${prov}`;
+    }else{
+      lugarNac = mun.found ? tcase(mun.canon) : tcase(seg);
+      if (!(mun.found && !mun.approx)) lugarUncertain = true;
+    }
+  }
+
+  // --- PADRES (corte por 'ADE' → IDESP; usa librería, no peta; descompone nombres pegados) ---
+  let padres = "", padresUncertain = true;
+  {
+    const hasName = (tok)=>{
+      if (!tok) return false;
+      if (!NOMBRES_SET || NOMBRES_SET.size === 0) return false;
+      return NOMBRES_SET.has(normalize(tok));
+    };
+
+    if (idxIDESP !== -1){
+      // Buscar anclaje 'ADE' robusto (A[ D/Q/C/O/0 ]?E) sobre NS (sin espacios), antes de IDESP; ordenados
+      const adeIdxs = (()=> {
+        const out = [];
+        const rx = /A[ DQCO0O]?E/g; // ADE, AOE, A0E, AQE, ACE y AE
+        rx.lastIndex = 0;
+        let m;
+        while ((m = rx.exec(NS))) {
+          const i = m.index;
+          if (idxIDESP !== -1 && i < idxIDESP) out.push(i);
+          if (idxIDESP !== -1 && i >= idxIDESP) break;
+        }
+        out.sort((a,b)=>a-b);
+        return out;
+      })();
+
+      let candidates = adeIdxs;
+      if (idxLUG !== -1){
+        const afterLugar = adeIdxs.filter(i => i > idxLUG);
+        if (afterLugar.length) candidates = afterLugar;
+      }
+
+      const extractPair = (segNS)=>{
+        let seg = (segNS||"").replace(/[0-9]+/g,'').replace(/[\/\|_!¡]+/g,'I');
+
+        const deco = (s)=>{
+          if (!s) return "";
+          if (hasName(s)) return tcase(s);
+          const C = s;
+          for (let k=2; k<=Math.min(12, C.length-2); k++){
+            const A = C.slice(0,k), B = C.slice(k);
+            if (hasName(A) && hasName(B)) return `${tcase(A)} ${tcase(B)}`;
+          }
+          return "";
+        };
+
+        for (let j=1;j<seg.length-1;j++){
+          if (seg[j] !== 'I') continue;
+          const L = seg.slice(0,j), R = seg.slice(j+1);
+          const Ld = deco(L), Rd = deco(R);
+          if (Ld && Rd) return `${Ld} y ${Rd}`;
+        }
+
+        const compact = seg.replace(/I+/g,'');
+        for (let m=2;m<=Math.min(24, compact.length-2);m++){
+          const L = compact.slice(0,m), R = compact.slice(m);
+          const Ld = deco(L), Rd = deco(R);
+          if (Ld && Rd) return `${Ld} y ${Rd}`;
+        }
+
+        const toks = seg.split(/I+/).filter(Boolean);
+        for (let a=0;a<toks.length;a++){
+          for (let b=a+1;b<toks.length;b++){
+            const Ld = deco(toks[a]), Rd = deco(toks[b]);
+            if (Ld && Rd) return `${Ld} y ${Rd}`;
+          }
+        }
+        return "";
+      };
+
+      if (candidates.length){
+        const iADE = candidates[candidates.length - 1];
+        const segNS = NS.slice(iADE + 3, idxIDESP);
+        const pair = extractPair(segNS);
+        if (pair){
+          padres = pair; padresUncertain = false;
+        } else {
+          padres = ""; padresUncertain = true;
+        }
+      } else if (idxLUG !== -1){
+        const start = idxLUG + (NS.startsWith('LUGARDENACIMIENTO', idxLUG) ? 'LUGARDENACIMIENTO'.length : 'LAGARDENACIMIENTO'.length);
+        if (start < idxIDESP){
+          const segNS = NS.slice(start, idxIDESP);
+          const pair = extractPair(segNS);
+          if (pair){
+            padres = pair; padresUncertain = false;
+          } else {
+            padres = ""; padresUncertain = true;
+          }
+        }
+      }
+
+      if (padres){
+        const parts = padres.split(/\s+y\s+/i);
+        if (parts.length===2){
+          const badA = PROV_SET.has(normalize(parts[0])) || MUNICIPIOS_SET.has(normalize(parts[0]));
+          const badB = PROV_SET.has(normalize(parts[1])) || MUNICIPIOS_SET.has(normalize(parts[1]));
+          if (badA || badB) padresUncertain = true;
+        }
+      }
+    }
+  }
+
+  // --- PARCHE ÚNICO: Provincia como final inclusivo + backfill DOMICILIO si falta ---
+  (function(){
+    // Helper: última provincia ANTES de un índice dado en NS
+    function lastProvinceBefore(limitIdx){
+      let last = null;
+      for (const [pNS, canon] of PROV_NOSPACE.entries()){
+        const i = NS.lastIndexOf(pNS, limitIdx);
+        if (i !== -1 && i <= limitIdx){
+          if (!last || i > last.index || (i === last.index && pNS.length > last.pNS.length)){
+            last = { index: i, canon, pNS };
+          }
+        }
+      }
+      return last;
+    }
+
+    // 1) NACIMIENTO: si idxLUG válido y cálculo previo vacío o en duda,
+    // usa la PRIMERA provincia DESPUÉS de idxLUG como final inclusivo.
+    if (idxLUG !== -1 && (!lugarNac || lugarUncertain)) {
+      const start = idxLUG + (NS.startsWith('LUGARDENACIMIENTO', idxLUG) ? 'LUGARDENACIMIENTO'.length : (NS.startsWith('LAGARDENACIMIENTO', idxLUG) ? 'LAGARDENACIMIENTO'.length : 0));
+      if (start > idxLUG) {
+        const pv = findProvinceAfter(NS, start);
+        if (pv) {
+          // recorta hasta provincia (inclusiva)
+          const rawStart = MAP[start] ?? 0;
+          const rawEnd   = MAP[pv.index + pv.pNS.length - 1] ?? (MAP[MAP.length-1] || RAW.length-1);
+          const segRaw   = RAW.slice(rawStart, rawEnd + 1);
+          // normaliza
+          const clean = segRaw.replace(/\s{2,}/g,' ').trim();
+          const municipioGuess = matchMunicipio(clean);
+          const provName = tcase(pv.canon);
+          if (municipioGuess.found) {
+            lugarNac = (normalize(municipioGuess.canon) === normalize(pv.canon))
+              ? provName
+              : `${tcase(municipioGuess.canon)}, ${provName}`;
+          } else {
+            lugarNac = `${tcase(clean.replace(/\s*,\s*/g, ', '))}`.replace(/\s+,/g, ',');
+          }
+          lugarUncertain = false;
+        }
+      }
+    }
+
+    // 2) DOMICILIO: si NO hay DOMICILIO claro (vacío o incierto) y SÍ hay idxLUG,
+    // toma la ÚLTIMA provincia ANTES de idxLUG como fin inclusivo, y busca hacia atrás
+    // un token de vía razonable (o 'DOMICILIO' si existiera).
+    if (( !domicilio || domicilioUncertain ) && idxLUG !== -1) {
+      const pvPrev = lastProvinceBefore(idxLUG - 1);
+      if (pvPrev) {
+        // punto final inclusivo en RAW
+        const rawEnd = MAP[pvPrev.index + pvPrev.pNS.length - 1] ?? (MAP[MAP.length-1] || RAW.length-1);
+        // busca inicio en RAW hacia atrás: DOMICILIO o tokens de vía
+        const rawSearch = RAW.slice(0, rawEnd + 1);
+        const viaRx = /(DOMICILIO|C\.\s*|AVDA|AVENIDA|CL\s|CALLE|PASEO|PSO)/gi;
+        let m, lastMatch = null;
+        while ((m = viaRx.exec(rawSearch))) lastMatch = m;
+        if (lastMatch) {
+          const rawStart = Math.max(0, lastMatch.index + (lastMatch[1].toUpperCase()==='DOMICILIO' ? 'DOMICILIO'.length : 0));
+          let seg = RAW.slice(rawStart, rawEnd + 1)
+            .replace(/\s*,\s*/g, ', ')
+            .replace(/\s{2,}/g,' ')
+            .trim();
+          // engancha municipio y provincia si se reconocen
+          const muni = matchMunicipio(seg);
+          const provName = tcase(pvPrev.canon);
+          if (muni.found && normalize(muni.canon) !== normalize(pvPrev.canon)) {
+            if (!new RegExp(provName.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*$','i').test(seg)) {
+              seg = `${tcase(muni.canon)}, ${provName}`;
+            }
+          } else if (!/,\s*[A-ZÁÉÍÓÚÜÑ ]+$/.test(seg)) {
+            seg = `${seg.replace(/\s+,/g, ',')}, ${provName}`;
+          }
+          domicilio = seg;
+          domicilioUncertain = false;
+        }
+      }
+    }
+  })();
+
+  // --- MRZ (L1/L2/L3) (SE MANTIENE IGUAL) ---
+  let MRZ_L1 = "", MRZ_L2 = "", MRZ_L3 = "";
+  if (idxIDESP !== -1) {
+    // L1: desde IDESP hasta el PRIMER "<<<" que siga
+    const firstArrows = NS.indexOf('<<<', idxIDESP);
+    if (firstArrows !== -1) {
+      MRZ_L1 = NS.slice(idxIDESP, firstArrows);
+
+      // L2: buscar patrón YYMMDD? + sexo [MF] en una VENTANA limitada tras el primer "<<<"
+      const winEnd = Math.min(NS.length, firstArrows + 180);
+      const winL2 = NS.slice(firstArrows + 3, winEnd);
+      const mL2 = winL2.match(/([0-9A-Z]{2})([0-9A-Z]{2})([0-9A-Z]{2}).([MF])/);
+      if (mL2) MRZ_L2 = mL2[0];
+
+      // L3: tras "ESP" si existe; si no, tras la misma ventana; NO exige segundo "<<<"
+      const idxESPwin = winL2.indexOf('ESP');
+      let afterIdxAbs = firstArrows + 3;
+      if (idxESPwin !== -1) afterIdxAbs = firstArrows + 3 + idxESPwin + 3;
+
+      const nextArrows = NS.indexOf('<<<', afterIdxAbs);
+      let l3Start = (nextArrows !== -1) ? nextArrows + 3 : afterIdxAbs;
+
+      while (l3Start < NS.length && !/[A-Z<]/.test(NS[l3Start])) l3Start++;
+      MRZ_L3 = NS.slice(l3Start, Math.min(NS.length, l3Start + 120));
+    }
+  }
+
+  // Nº doc desde L1/L2
+  function docFromL1L2(l1,l2){
+    if (!l1) return "";
+    const m = l1.match(/<{3,}/);
+    if (m){ const idx=m.index; if (idx>=9) return l1.slice(idx-9, idx).toUpperCase(); }
+    if (l2){ const clean=l1.replace(/</g,''); if (clean.length>=9) return clean.slice(-9).toUpperCase(); }
+    return "";
+  }
+  let numDoc = docFromL1L2(MRZ_L1, MRZ_L2);
+
+  // Fecha y sexo desde L2 (mapDigit para confusiones)
+  let fechaNac="", sexo="";
+  if (MRZ_L2){
+    const m = MRZ_L2.match(/([0-9A-Z]{2})([0-9A-Z]{2})([0-9A-Z]{2}).([MF])/);
+    if (m){
+      const yy = parseInt(mapDigit(m[1][0]) + mapDigit(m[1][1]),10);
+      const mm = mapDigit(m[2][0]) + mapDigit(m[2][1]);
+      const dd = mapDigit(m[3][0]) + mapDigit(m[3][1]);
+      const year = yy >= 30 ? 1900 + yy : 2000 + yy;
+      fechaNac = `${dd}/${mm}/${year}`;
+      sexo = m[4] === 'F' ? 'FEMENINO' : 'MASCULINO';
+    }
+  }
+// --- PATCH DE CORRECCIÓN MRZ: limitar lectura a la zona antes del siguiente "ESP" o "<<<" ---
+(function(){
+  if (!MRZ_L1 && !MRZ_L2) return;
+
+  // 1. Corregir Nº Documento si IDESP contiene la secuencia correcta
+  if (idxIDESP !== -1 && (!numDoc || numDoc.length < 8)) {
+    const afterID = NS.slice(idxIDESP + 5, idxIDESP + 60); // mira los 60 caracteres tras IDESP
+    const mDoc = afterID.match(/([A-Z0-9]{7,9})</); // DNI/NIE seguido de flecha
+    if (mDoc) numDoc = mDoc[1].toUpperCase();
+  }
+
+  // 2. Corregir Fecha/Sexo si se detectan dentro de la línea posterior a IDESP
+  if ((!fechaNac || !sexo) && idxIDESP !== -1) {
+    const afterID = NS.slice(idxIDESP, idxIDESP + 120);
+    const mL2 = afterID.match(/([0-9A-Z]{6})([MF])/);
+    if (mL2) {
+      const raw6 = mL2[1].split("").map(mapDigit).join("");
+      const yy = parseInt(raw6.slice(0,2), 10);
+      const mm = raw6.slice(2,4);
+      const dd = raw6.slice(4,6);
+      const year = yy >= 30 ? 1900 + yy : 2000 + yy;
+      fechaNac = `${dd}/${mm}/${year}`;
+      sexo = mL2[2] === 'F' ? 'FEMENINO' : 'MASCULINO';
+    }
+  }
+})();
+// === PATCH SOLO FECHA NAC (L2 = YYMMDD + check + M/F) ===
+(function(){
+  if (idxIDESP === -1) return;
+
+  // si ya hay fecha válida (dd/mm/aaaa) y plausible, no tocamos
+  const okFecha = f => /^\d{2}\/\d{2}\/\d{4}$/.test(f) &&
+                       (m=>m>=1&&m<=12)(parseInt(f.slice(3,5),10)) &&
+                       (d=>d>=1&&d<=31)(parseInt(f.slice(0,2),10));
+  if (fechaNac && okFecha(fechaNac)) return;
+
+  const firstArrows = NS.indexOf('<<<', idxIDESP);
+  if (firstArrows === -1) return;
+
+  // M/F más cercano hacia la izquierda desde el primer '<<<'
+  let sexAt = -1;
+  for (let p = firstArrows - 1; p >= idxIDESP; p--) {
+    const ch = NS[p];
+    if (ch === 'M' || ch === 'F') { sexAt = p; break; }
+  }
+  if (sexAt === -1) return;
+
+  // L2: ... YYMMDD + check + (M/F)
+  if (sexAt - 7 >= idxIDESP) {
+    const raw7 = NS.slice(sexAt - 7, sexAt);        // 6 fecha + 1 check
+    const raw6 = raw7.slice(0, 6).split('').map(mapDigit).join('');
+    const yy = parseInt(raw6.slice(0,2), 10);
+    const mm = parseInt(raw6.slice(2,4), 10);
+    const dd = parseInt(raw6.slice(4,6), 10);
+    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31) {
+      const year = yy >= 30 ? 1900 + yy : 2000 + yy;
+      fechaNac = `${String(dd).padStart(2,'0')}/${String(mm).padStart(2,'0')}/${year}`;
+    }
+  }
+})();
+  // Nacionalidad
+  let Nacionalidad = (MRZ_L1.includes('ESP') || MRZ_L2.includes('ESP')) ? "España" : "";
+
+  // Apellidos/Nombre desde L3 (sin dígitos)
+  let nombre="", apellidos="";
+  if (MRZ_L3){
+    const parts = MRZ_L3.split('<').filter(Boolean);
+    const ap1 = (parts[0]||"").replace(/[0-9]/g,'');
+    const ap2 = (parts[1]||"").replace(/[0-9]/g,'');
+    const nom1= (parts[2]||"").replace(/[0-9]/g,'');
+    const nom2= (parts[3]||"").replace(/[0-9]/g,'');
+    apellidos = [ap1,ap2].filter(Boolean).join(' ').trim().toUpperCase();
+    nombre = tcase([nom1,nom2].filter(Boolean).join(' ').trim());
+  }
+
+  // Sanitización final
+  const sanitize = s => (s||"").replace(/^[\s:.,-]+|[\s:.,-]+$/g,'').replace(/\s{2,}/g,' ').trim();
+  let out = {
+    Nombre: tcase(sanitize(nombre)),
+    Apellidos: sanitize(apellidos).toUpperCase(),
+    "Tipo de documento": "DNI",
+    "Nº Documento": sanitize(numDoc||""),
+    Sexo: sanitize(sexo),
+    Nacionalidad: sanitize(Nacionalidad),
+    "Nombre de los Padres": tcase(sanitize(padres)).replace(/\sY\s/g,' y '),
+    "Fecha de nacimiento": sanitize(fechaNac),
+    "Lugar de nacimiento": tcase(sanitize(lugarNac)),
+    Domicilio: tcase(sanitize(domicilio)),
+    _flags:{
+      Nombre: !nombre,
+      Apellidos: !apellidos,
+      Padres: padresUncertain,
+      Lugar: lugarUncertain,
+      Domicilio: domicilioUncertain
+    }
+  };
+  return out;
+}
+
+// ---------- UI ----------
+function validateField(el){
+  if (!el) return;
+  const value = (el.value || "").trim();
+  const ok = value !== "";   // cualquier campo NO vacío → verde
+  el.classList.toggle("valid", ok);
+  el.classList.toggle("invalid", !ok);
+}
+
+function validateAll(){
+  ["Doc","Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
+    .forEach(id=>{
+      const el = document.getElementById(id);
+      if (!el) return;
+      validateField(el);
+    });
+}
+function updateCount(){
+  document.getElementById('countF').textContent = String(expediente.filiaciones.length);
+  renderLista();
+}
+function renderLista(){
+  const ul = document.getElementById('listaF');
+  ul.innerHTML = "";
+  expediente.filiaciones.forEach((f,i)=>{
+    const li = document.createElement('li');
+    const label = `${i+1}. ${f.Apellidos || '(sin apellidos)'}${f.Nombre ? ', '+f.Nombre : ''}`;
+    li.textContent = label;
+    const btn = document.createElement('button');
+    btn.className = "btn secondary";
+    btn.textContent = "Editar";
+    btn.onclick = ()=> {
+      fillFormFromParsed(f);
+      ["Telefono","Condicion"].forEach(id=>{
+        const el=document.getElementById(id);
+        if (id==="Telefono" && f["Teléfono"]!=null) el.value = f["Teléfono"];
+        if (id==="Condicion" && f["Condición"]!=null) el.value = f["Condición"];
+      });
+      expediente.filiaciones.splice(i,1);
+      updateCount();
+    };
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+}
+function getFormAsFiliacion(){
+  return {
+    "Nombre": document.getElementById('Nombre').value,
+    "Apellidos": (document.getElementById('Apellidos').value||"").toUpperCase(),
+    "Tipo de documento": document.getElementById('Tipo').value,
+    "Nº Documento": document.getElementById('Numero').value,
+    "Sexo": document.getElementById('Sexo').value,
+    "Nacionalidad": document.getElementById('Nacionalidad').value,
+    "Nombre de los Padres": document.getElementById('Padres').value,
+    "Fecha de nacimiento": document.getElementById('Nacimiento').value,
+    "Lugar de nacimiento": document.getElementById('Lugar').value,
+    "Domicilio": document.getElementById('Domicilio').value,
+    "Teléfono": document.getElementById('Telefono').value,
+    "Condición": document.getElementById('Condicion').value
+  };
+}
+function fillFormFromParsed(p){
+  if(p.Nombre!=null)  document.getElementById('Nombre').value = p.Nombre;
+  if(p.Apellidos!=null) document.getElementById('Apellidos').value = p.Apellidos;
+  if(p["Tipo de documento"]!=null) document.getElementById('Tipo').value = p["Tipo de documento"];
+  if(p["Nº Documento"]!=null) document.getElementById('Numero').value = p["Nº Documento"];
+  if(p.Sexo!=null) document.getElementById('Sexo').value = p.Sexo;
+  if(p.Nacionalidad!=null) document.getElementById('Nacionalidad').value = p.Nacionalidad;
+  if(p["Nombre de los Padres"]!=null) document.getElementById('Padres').value = p["Nombre de los Padres"];
+  if(p["Fecha de nacimiento"]!=null) document.getElementById('Nacimiento').value = p["Fecha de nacimiento"];
+  if(p["Lugar de nacimiento"]!=null) document.getElementById('Lugar').value = p["Lugar de nacimiento"];
+  if(p.Domicilio!=null) document.getElementById('Domicilio').value = p.Domicilio;
+
+  for (const id of ['Nombre','Apellidos','Padres','Lugar','Domicilio']){
+    document.getElementById(id)?.classList.remove('uncertain');
+  }
+  if (p._flags){
+    if (p._flags.Nombre) document.getElementById('Nombre')?.classList.add('uncertain');
+    if (p._flags.Apellidos) document.getElementById('Apellidos')?.classList.add('uncertain');
+    if (p._flags.Padres) document.getElementById('Padres')?.classList.add('uncertain');
+    if (p._flags.Lugar) document.getElementById('Lugar')?.classList.add('uncertain');
+    if (p._flags.Domicilio) document.getElementById('Domicilio')?.classList.add('uncertain');
+  }
+
+  validateAll();
+}
+function clearFormOnly(){
+  ["Doc","Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
+    .forEach(id=>{
+      const el=document.getElementById(id);
+      if (el){ el.value=""; el.classList.remove('uncertain'); }
+    });
+  const ta = document.getElementById('Doc');
+  if (ta) ta.value = "";
+  updateCount(); validateAll();
+}
+function processOCR(ocr){
+  if(!ocr.trim()){ alert("Portapapeles vacío. Copia el OCR primero."); return; }
+  const parsed = parseByRules(ocr);
+  fillFormFromParsed(parsed);
+}
+
+// ---------- eventos ----------
+document.getElementById('readAnalyze').addEventListener('click', async ()=>{
+  const ocr = await readFromClipboard();
+  processOCR(ocr);
+});
+document.getElementById('gptComparecencia').addEventListener('click', ()=>{
+  window.open('https://chatgpt.com/g/g-68fe060630348191b62c44416164a37d-comparecencia','_blank','noopener');
+});
+async function readFromClipboard(){
+  try{ const txt = await navigator.clipboard.readText(); return txt || ""; }
+  catch{ const m = prompt("Pega manualmente el texto:"); return m || ""; }
+}
+document.getElementById('integrarDoc').addEventListener('click', async ()=>{
+  const txt = await readFromClipboard();
+  if (!txt.trim()) { alert("Portapapeles vacío."); return; }
+  document.getElementById('Doc').value = txt;
+  expediente.doc = txt;
+});
+document.getElementById('addFiliacion').addEventListener('click', ()=>{
+  const f = getFormAsFiliacion();
+  const anyVal = Object.values(f).some(v => (v||"").trim()!=="");
+  if (!anyVal){ alert("Ficha vacía."); return; }
+
+  const condEl = document.getElementById('Condicion');
+  const cond = (condEl.value || "").trim();
+  if (!cond){
+    alert("Selecciona la Condición (obligatoria) antes de agregar la filiación.");
+    condEl.focus();
+    condEl.classList.add('invalid');
+    return;
+  } else {
+    condEl.classList.remove('invalid');
+    condEl.classList.add('valid');
+  }
+
+  expediente.filiaciones.push(f);
+  updateCount();
+  clearFormOnly();
+});
+document.getElementById('clearForm').addEventListener('click', clearFormOnly);
+document.getElementById('Doc').addEventListener('input', (e)=>{ expediente.doc = e.target.value; });
+document.getElementById('download').addEventListener('click', async ()=>{
+  // Si hay datos en la ficha actual, obligamos a agregarlos o limpiarlos
+  const f = getFormAsFiliacion();
+  const anyVal = Object.values(f).some(v => (v||"").trim()!=="");
+  if (anyVal){
+    alert(
+      "Tienes datos en la ficha de filiación que no has agregado al expediente.\n\n" +
+      "Pulsa 'Agregar filiación' o limpia la ficha antes de descargar."
+    );
+    return;
+  }
+
+  expediente.doc = document.getElementById('Doc').value || expediente.doc || "";
+  const data = { doc: expediente.doc, filiaciones: expediente.filiaciones };
+
+  const password = prompt("Introduce una frase de paso para cifrar el expediente (mínimo 8 caracteres):");
+  if (!password) return;
+  if (password.length < 8){
+    alert("Frase de paso demasiado corta. Usa al menos 8 caracteres.");
+    return;
+  }
+
+  try{
+    const cipherBase64 = await encryptJSON(data, password);
+    const blob = new Blob([cipherBase64], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const d = new Date(); const pad = n => String(n).padStart(2,'0');
+    const fname = `Proyecto ${pad(d.getHours())}-${pad(d.getMinutes())} ${pad(d.getDate())}_${pad(d.getMonth()+1)}_${d.getFullYear()}.enc`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fname;
+    a.click();
+    URL.revokeObjectURL(url);
+  }catch(err){
+    console.error("Error cifrando el expediente:", err);
+    alert("No se ha podido cifrar el expediente.");
+  }
+});
+
+const btnLoadEnc = document.getElementById('loadEncrypted');
+const inputEnc   = document.getElementById('encryptedInput');
+
+if (btnLoadEnc && inputEnc){
+  btnLoadEnc.addEventListener('click', () => {
+    inputEnc.value = "";
+    inputEnc.click();
+  });
+
+  inputEnc.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const text = (ev.target.result || "").toString().trim();
+      if (!text){
+        alert("Archivo vacío o no válido.");
+        return;
+      }
+      const password = prompt("Introduce la frase de paso para descifrar el expediente:");
+      if (!password) return;
+      try{
+        const data = await decryptJSON(text, password);
+        if (!data || typeof data !== "object"){
+          throw new Error("Formato inesperado");
+        }
+        expediente.doc = data.doc || "";
+        expediente.filiaciones = Array.isArray(data.filiaciones) ? data.filiaciones : [];
+
+        // Limpiar campos del formulario (excepto DOC)
+        ["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
+          .forEach(id => {
+            const el = document.getElementById(id);
+            if (el){ el.value = ""; el.classList.remove("uncertain","valid","invalid"); }
+          });
+        const docEl = document.getElementById('Doc');
+        if (docEl) docEl.value = expediente.doc;
+        updateCount();
+        validateAll();
+        alert("Proyecto cifrado cargado correctamente.");
+      }catch(err){
+        console.error("Error al descifrar el expediente:", err);
+        alert("No se ha podido descifrar el expediente. Clave incorrecta o archivo dañado.");
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+// Validación global de inputs/select/textarea por ID controlado
+document.addEventListener("input", (e) => {
+  const el = e.target;
+  if (!el || !el.id) return;
+  const idsControlados = new Set([
+    "Doc","Nombre","Apellidos","Tipo","Numero","Sexo",
+    "Nacionalidad","Padres","Nacimiento","Lugar",
+    "Domicilio","Telefono","Condicion"
+  ]);
+  if (idsControlados.has(el.id)) {
+    validateField(el);
+  }
+});
+// init
+["Doc","Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const handler = () => validateField(el);
+  // Validar al escribir, al cambiar y al salir del campo
+  el.addEventListener("input", handler);
+  el.addEventListener("blur", handler);
+  el.addEventListener("change", handler);
+  // Validar estado inicial
+  validateField(el);
+});
+
+updateCount();
+validateAll();
+initMunicipios();
+initNombres();
+</script>
+  <script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .catch(err => console.error('SW error', err));
+  });
+}
+</script>
+<script src="voice.js"></script>
+</body>
+</html>
