@@ -4,9 +4,6 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>FILIATRON</title>
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0b1220">
 
   <style>
       :root{
@@ -27,14 +24,17 @@
       background:none;
       min-height:100dvh;
     }
-    /* Capa de foto de fondo asegurada */
+    /* Capa de fondo visual (no depende de verde.jpg, mantiene estética) */
     body::before{
       content:"";
       position:fixed;
       inset:0;
-      background:url('./verde.jpg') center / cover no-repeat;
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(25,124,229,.35), transparent 60%),
+        radial-gradient(900px 600px at 80% 30%, rgba(34,197,123,.22), transparent 55%),
+        linear-gradient(180deg, rgba(11,18,32,1), rgba(11,18,32,.92));
       z-index:-2;
-      transform:translateZ(0); /* fuerza pintar y evita glitches de backdrop-filter */
+      transform:translateZ(0);
     }
     /* Velo oscuro encima de la foto (controla visibilidad del fondo) */
     body::after{
@@ -154,8 +154,8 @@ h1::after{
       color:var(--fg);border:0.5px solid var(--border);outline:none;transition:border-color .15s
     }
     textarea{min-height:120px;resize:vertical}
-    input.valid,select.valid,textarea.valid{border-color:var(--green)!important}
-input.invalid,select.invalid,textarea.invalid{border-color:var(--red)!important}
+    input.valid,select.valid{border-color:var(--green)!important}
+    input.invalid,select.invalid{border-color:var(--red)!important}
     .span2{grid-column:1/-1}
     .badge{padding:4px 8px;border-radius:9999px;background:rgba(255,255,255,.12);border:1px solid var(--border);font-size:12px}
     .badge{ box-shadow:0 2px 10px rgba(77,163,255,.12), inset 0 0 0 1px rgba(255,255,255,.05) }
@@ -200,7 +200,6 @@ input.invalid,select.invalid,textarea.invalid{border-color:var(--red)!important}
       box-shadow:0 0 0 2px rgba(255,193,7,.18) inset;
     }
   </style>
-  <link rel="preload" as="image" href="aq.png">
 </head>
 <body>
 <h1 data-title="FILIATRON">FILIATRON</h1>
@@ -229,7 +228,7 @@ input.invalid,select.invalid,textarea.invalid{border-color:var(--red)!important}
         <textarea id="Doc"></textarea>
         <div class="row center" style="margin:8px 0 6px 0">
           <button class="btn" id="readAnalyze">Integrar DNI 🪪</button>
-          <button class="btn" id="voiceMode" title="Activar dictado por voz">Voz 🎤</button>
+          <input type="file" id="dniImageInput" accept="image/*" capture="environment" style="display:none">
         </div>
       </div>
 
@@ -969,13 +968,22 @@ function parseByRules(ocrRaw){
 function validateField(el){
   if (!el) return;
   const value = (el.value || "").trim();
-  const ok = value !== "";   // cualquier campo NO vacío → verde
+  let ok = false;
+
+  if (el.tagName === "INPUT" || el.tagName === "TEXTAREA"){
+    // mínimo 2 caracteres para considerarlo "bien" (borde verde)
+    ok = value.length >= 2;
+  } else if (el.tagName === "SELECT"){
+    // selects: basta con que tenga algo elegido
+    ok = value !== "";
+  }
+
   el.classList.toggle("valid", ok);
   el.classList.toggle("invalid", !ok);
 }
 
 function validateAll(){
-  ["Doc","Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
+  ["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
     .forEach(id=>{
       const el = document.getElementById(id);
       if (!el) return;
@@ -1052,7 +1060,7 @@ function fillFormFromParsed(p){
   validateAll();
 }
 function clearFormOnly(){
-  ["Doc","Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
+  ["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"]
     .forEach(id=>{
       const el=document.getElementById(id);
       if (el){ el.value=""; el.classList.remove('uncertain'); }
@@ -1068,9 +1076,20 @@ function processOCR(ocr){
 }
 
 // ---------- eventos ----------
-document.getElementById('readAnalyze').addEventListener('click', async ()=>{
-  const ocr = await readFromClipboard();
-  processOCR(ocr);
+document.getElementById('readAnalyze').addEventListener('click', async () => {
+  const choice = confirm(
+    "Aceptar = Usar foto del DNI (cámara o archivo)\nCancelar = Usar texto del portapapeles"
+  );
+
+  if (!choice) {
+    const ocr = await readFromClipboard();
+    processOCR(ocr);
+    return;
+  }
+
+  const input = document.getElementById('dniImageInput');
+  input.value = "";
+  input.click();
 });
 document.getElementById('gptComparecencia').addEventListener('click', ()=>{
   window.open('https://chatgpt.com/g/g-68fe060630348191b62c44416164a37d-comparecencia','_blank','noopener');
@@ -1195,30 +1214,17 @@ if (btnLoadEnc && inputEnc){
     reader.readAsText(file);
   });
 }
-// Validación global de inputs/select/textarea por ID controlado
-document.addEventListener("input", (e) => {
-  const el = e.target;
-  if (!el || !el.id) return;
-  const idsControlados = new Set([
-    "Doc","Nombre","Apellidos","Tipo","Numero","Sexo",
-    "Nacionalidad","Padres","Nacimiento","Lugar",
-    "Domicilio","Telefono","Condicion"
-  ]);
-  if (idsControlados.has(el.id)) {
-    validateField(el);
-  }
-});
+
 // init
-["Doc","Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"].forEach(id => {
+["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
-  const handler = () => validateField(el);
-  // Validar al escribir, al cambiar y al salir del campo
-  el.addEventListener("input", handler);
-  el.addEventListener("blur", handler);
-  el.addEventListener("change", handler);
-  // Validar estado inicial
-  validateField(el);
+  // Validar al salir del campo
+  el.addEventListener("blur", () => validateField(el));
+  // En selects, también al cambiar la opción
+  if (el.tagName === "SELECT"){
+    el.addEventListener("change", () => validateField(el));
+  }
 });
 
 updateCount();
@@ -1226,14 +1232,119 @@ validateAll();
 initMunicipios();
 initNombres();
 </script>
-  <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .catch(err => console.error('SW error', err));
+<script>
+
+// ---------- Imagen → IA (OCR) ----------
+const OCR_API_URL = "https://ocr-vision-1054102077894.europe-west1.run.app";
+const MAX_IMAGE_BYTES = 400 * 1024;
+const TARGET_LONG_EDGE = 2200;
+
+// Mapea el JSON del backend (index.html) al esquema que usa Fil.html (fillFormFromParsed)
+function mapBackendToFilFields(p){
+  const safe = v => (v == null ? "" : String(v));
+  const sanitizeKeepComma = (s) => safe(s)
+    // permite letras (incl. acentos), números, espacios y , / - .
+    .replace(/[^0-9A-Za-zÀ-ÖØ-öø-ÿÑñ\s,\/\-\.]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const mrz2 = (p && Array.isArray(p.mrz) && p.mrz[1]) ? String(p.mrz[1]) : "";
+  const sexoCode = (mrz2 && mrz2.length >= 8) ? mrz2.charAt(7) : "";
+  const sexo = sexoCode === 'F' ? 'FEMENINO' : (sexoCode === 'M' ? 'MASCULINO' : '');
+
+  const lugar = [p?.lugar_nacimiento_municipio, p?.lugar_nacimiento_provincia]
+    .filter(Boolean)
+    .join(', ');
+
+  return {
+    Nombre: sanitizeKeepComma(p?.nombre || ''),
+    Apellidos: sanitizeKeepComma(p?.apellidos || '').toUpperCase(),
+    "Tipo de documento": sanitizeKeepComma(p?.tipo_documento || 'DNI'),
+    "Nº Documento": sanitizeKeepComma(p?.numero_documento || ''),
+    Nacionalidad: sanitizeKeepComma(p?.nacionalidad || ''),
+    "Fecha de nacimiento": sanitizeKeepComma(p?.fecha_nacimiento || ''),
+    "Lugar de nacimiento": sanitizeKeepComma(lugar),
+    "Nombre de los Padres": sanitizeKeepComma(safe(p?.hijos_de || '').replace(/\s*\/\s*/g, ' y ')),
+    Domicilio: sanitizeKeepComma(p?.domicilio || ''),
+    Sexo: sexo,
+    _flags: {}
+  };
+}
+
+document.getElementById('dniImageInput').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    const res = await fetch(OCR_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64: dataUrl })
+    });
+
+    const text = await res.text();
+    if (!res.ok) throw new Error(text);
+
+    const json = JSON.parse(text);
+    if (!json || json.ok !== true || !json.parsed) throw new Error("Respuesta inválida del backend");
+
+    const mapped = mapBackendToFilFields(json.parsed || {});
+    fillFormFromParsed(mapped);
+  } catch (err) {
+    console.error(err);
+    alert("Error al procesar la imagen del DNI. Revisa consola.");
+  }
+});
+
+// ---------- Reducción automática de imagen ----------
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = async () => {
+      try {
+        let w = img.width;
+        let h = img.height;
+        const longEdge = Math.max(w, h);
+
+        if (longEdge > TARGET_LONG_EDGE) {
+          const scale = TARGET_LONG_EDGE / longEdge;
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d", { alpha: false });
+        ctx.drawImage(img, 0, 0, w, h);
+
+        let quality = 0.9;
+        let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+        while (dataUrl.length * 0.75 > MAX_IMAGE_BYTES && quality > 0.5) {
+          quality -= 0.05;
+          dataUrl = canvas.toDataURL("image/jpeg", quality);
+        }
+
+        URL.revokeObjectURL(url);
+        resolve(dataUrl);
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        reject(e);
+      }
+    };
+
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+
+    img.src = url;
   });
 }
 </script>
-<script src="voice.js"></script>
 </body>
 </html>
