@@ -511,7 +511,108 @@ function mapDigit(ch){
   if (t==='B') return '8';
   return '0';
 }
+// ---------- PASAPORTE (TD3) ----------
+// Parser cerrado: usa MRZ como fuente principal y usa el cuerpo solo como refuerzo cuando hay duda.
+function parsePassportByMRZ(ocrRaw){
+  const built = buildNS(ocrRaw);
+  const NS = built.NS;
+  const RAW = built.RAW;
 
+  // Detecta inicio MRZ de pasaporte: "P<" (TD3)
+  const idxP = NS.indexOf('P<');
+  if (idxP === -1) return null;
+
+  // Reconstruir L1/L2 (TD3: 2 líneas de 44)
+  const win = NS.slice(idxP, Math.min(NS.length, idxP + 120));
+  const lines = win.split(/\n/).filter(Boolean);
+
+  let l1 = "", l2 = "";
+  if (lines.length >= 2) {
+    l1 = String(lines[0] || "").replace(/\s+/g, "");
+    l2 = String(lines[1] || "").replace(/\s+/g, "");
+  } else {
+    const flat = win.replace(/\s+/g, "");
+    l1 = flat.slice(0, 44);
+    l2 = flat.slice(44, 88);
+  }
+  l1 = (l1 || "").padEnd(44, '<').slice(0, 44);
+  l2 = (l2 || "").padEnd(44, '<').slice(0, 44);
+
+  // Helpers MRZ
+  const mapDigitMRZ = (ch)=>{
+    if (/[0-9]/.test(ch)) return ch;
+    const t = String(ch||"").toUpperCase();
+    if (t==='O'||t==='Q') return '0';
+    if (t==='I'||t==='L') return '1';
+    if (t==='Z') return '2';
+    if (t==='S') return '5';
+    if (t==='B') return '8';
+    return ch; // el nº de pasaporte puede llevar letras
+  };
+  const clean = (s)=>String(s||"").replace(/</g,' ').replace(/\s+/g,' ').trim();
+
+  // TD3
+  const issuing = l1.slice(2,5);              // ISO3 emisor
+  const namesPart = l1.slice(5);              // apellidos<<nombres
+  const parts = namesPart.split('<<');
+  const sur = clean(parts[0] || "").toUpperCase();
+  const giv = tcase(clean((parts[1] || "").replace(/</g,' ')));
+
+  const docNumRaw = l2.slice(0,9);
+  const docNum = docNumRaw.replace(/</g,'').split('').map(mapDigitMRZ).join('').toUpperCase();
+
+  const nat = l2.slice(10,13).replace(/</g,'').toUpperCase();  // ISO3 nacionalidad
+
+  const dob6 = l2.slice(13,19).split('').map(mapDigitMRZ).join('');
+  const sex = (l2.slice(20,21) || '').toUpperCase();
+
+  const ddmmyyyy = (yymmdd)=>{
+    if (!/^\d{6}$/.test(yymmdd)) return "";
+    const yy = parseInt(yymmdd.slice(0,2),10);
+    const mm = yymmdd.slice(2,4);
+    const dd = yymmdd.slice(4,6);
+    const nowYY = new Date().getFullYear() % 100;
+    const yyyy = (yy > nowYY ? 1900 + yy : 2000 + yy);
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  const fechaNac = ddmmyyyy(dob6);
+  const sexo = (sex === 'F') ? 'FEMENINO' : (sex === 'M') ? 'MASCULINO' : "";
+
+  // Refuerzo: nº pasaporte también suele estar impreso en el cuerpo (VIZ). Solo cuenta si coincide exacto.
+  const bodyHit = (docNum && docNum.length >= 6)
+    ? new RegExp(`\\b${docNum.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')}\\b`, 'i').test(RAW)
+    : false;
+
+  return {
+    Nombre: tcase(giv),
+    Apellidos: (sur || "").toUpperCase(),
+    "Tipo de documento": "PASAPORTE",
+    "Nº Documento": docNum,
+    Sexo: sexo,
+    Nacionalidad: nat || "",
+    "Nombre de los Padres": "",
+    "Fecha de nacimiento": fechaNac,
+    "Lugar de nacimiento": "",
+    Domicilio: "",
+    _flags:{
+      Nombre: !giv,
+      Apellidos: !sur,
+      Padres: true,
+      Lugar: true,
+      Domicilio: true,
+      Numero: !docNum || !bodyHit
+    },
+    _mrz:{ l1, l2, issuing }
+  };
+}
+
+// Wrapper: decide por MRZ qué parser ejecutar (sin tocar el DNI existente)
+function parseDocument(ocrRaw){
+  const maybePass = parsePassportByMRZ(ocrRaw);
+  if (maybePass) return maybePass;
+  return parseByRules(ocrRaw);
+}
 // ---------- Parser principal (NS) ----------
 function parseByRules(ocrRaw){
   // --- construir NS y, si empieza por EQUIPO, recortar hasta DOMICILIO ---
@@ -1035,6 +1136,35 @@ function getFormAsFiliacion(){
   };
 }
 function fillFormFromParsed(p){
+  // Fallback: si solo viene un "nombre completo" de 2 palabras metido entero en Nombre o en Apellidos,
+  // repártelo en 1 nombre + 1 apellido.
+  // Casos:
+  //  - Nombre vacío y Apellidos="PRABHDEEP SINGH" => Nombre="Prabhdeep" / Apellidos="SINGH"
+  //  - Apellidos vacío y Nombre="PRABHDEEP SINGH" => Nombre="Prabhdeep" / Apellidos="SINGH"
+  (function(){
+    const n0 = (p && p.Nombre != null) ? String(p.Nombre).trim() : "";
+    const a0 = (p && p.Apellidos != null) ? String(p.Apellidos).trim() : "";
+
+    const split2 = (s) => String(s || "").trim().split(/\s+/).filter(Boolean);
+
+    // Apellidos tiene 2 palabras y Nombre está vacío
+    if (!n0 && a0) {
+      const toks = split2(a0);
+      if (toks.length === 2) {
+        p.Nombre = tcase(toks[0]);
+        p.Apellidos = String(toks[1]).toUpperCase();
+      }
+    }
+
+    // Nombre tiene 2 palabras y Apellidos está vacío
+    if (!a0 && n0) {
+      const toks = split2(n0);
+      if (toks.length === 2) {
+        p.Nombre = tcase(toks[0]);
+        p.Apellidos = String(toks[1]).toUpperCase();
+      }
+    }
+  })();
   if(p.Nombre!=null)  document.getElementById('Nombre').value = p.Nombre;
   if(p.Apellidos!=null) document.getElementById('Apellidos').value = p.Apellidos;
   if(p["Tipo de documento"]!=null) document.getElementById('Tipo').value = p["Tipo de documento"];
@@ -1046,7 +1176,7 @@ function fillFormFromParsed(p){
   if(p["Lugar de nacimiento"]!=null) document.getElementById('Lugar').value = p["Lugar de nacimiento"];
   if(p.Domicilio!=null) document.getElementById('Domicilio').value = p.Domicilio;
 
-  for (const id of ['Nombre','Apellidos','Padres','Lugar','Domicilio']){
+for (const id of ['Nombre','Apellidos','Padres','Lugar','Domicilio','Numero']){
     document.getElementById(id)?.classList.remove('uncertain');
   }
   if (p._flags){
@@ -1055,6 +1185,7 @@ function fillFormFromParsed(p){
     if (p._flags.Padres) document.getElementById('Padres')?.classList.add('uncertain');
     if (p._flags.Lugar) document.getElementById('Lugar')?.classList.add('uncertain');
     if (p._flags.Domicilio) document.getElementById('Domicilio')?.classList.add('uncertain');
+  if (p._flags.Numero) document.getElementById('Numero')?.classList.add('uncertain');
   }
 
   validateAll();
@@ -1071,7 +1202,7 @@ function clearFormOnly(){
 }
 function processOCR(ocr){
   if(!ocr.trim()){ alert("Portapapeles vacío. Copia el OCR primero."); return; }
-  const parsed = parseByRules(ocr);
+const parsed = parseDocument(ocr);
   fillFormFromParsed(parsed);
 }
 
@@ -1252,9 +1383,11 @@ function mapBackendToFilFields(p){
   const sexoCode = (mrz2 && mrz2.length >= 8) ? mrz2.charAt(7) : "";
   const sexo = sexoCode === 'F' ? 'FEMENINO' : (sexoCode === 'M' ? 'MASCULINO' : '');
 
-  const lugar = [p?.lugar_nacimiento_municipio, p?.lugar_nacimiento_provincia]
-    .filter(Boolean)
-    .join(', ');
+  const lugar = (p?.lugar_nacimiento && String(p.lugar_nacimiento).trim())
+    ? String(p.lugar_nacimiento).trim()
+    : [p?.lugar_nacimiento_municipio, p?.lugar_nacimiento_provincia]
+        .filter(Boolean)
+        .join(', ');
 
   return {
     Nombre: sanitizeKeepComma(p?.nombre || ''),
@@ -1289,10 +1422,53 @@ document.getElementById('dniImageInput').addEventListener('change', async (e) =>
     const json = JSON.parse(text);
     if (!json || json.ok !== true || !json.parsed) throw new Error("Respuesta inválida del backend");
 
+    // ===============================
+    // DEBUG OCR → volcar en #Doc
+    // (ver exactamente qué usa el backend/parser)
+    // ===============================
+    try{
+      const dbg = {
+        ok: json?.ok,
+        error: json?.error || null,
+
+        // Lo que el backend ya “cree” que es (salida)
+        parsed: json?.parsed || null,
+        parsed_final: json?.parsed?.final || null,
+        parsed_mrz: json?.parsed?.mrz || null,
+        parsed_tipo_documento: json?.parsed?.tipo_documento || null,
+        parsed_numero_documento: json?.parsed?.numero_documento || null,
+        parsed_nombre: json?.parsed?.nombre || null,
+        parsed_apellidos: json?.parsed?.apellidos || null,
+        parsed_nacionalidad: json?.parsed?.nacionalidad || null,
+        parsed_fecha_nacimiento: json?.parsed?.fecha_nacimiento || null,
+        parsed_lugar_nacimiento: json?.parsed?.lugar_nacimiento || null,
+
+        // Debug que devuelve el backend
+        server_debug: json?.debug || null,
+
+        // Lo que llega de Azure (entrada real del parser)
+        raw_docType: json?.raw?.documents?.[0]?.docType || null,
+        raw_fields_keys: Object.keys(json?.raw?.documents?.[0]?.fields || {}),
+        raw_mrz_props: json?.raw?.documents?.[0]?.fields?.machineReadableZone?.properties || null,
+
+        // Texto OCR en orden (para ver contaminación tipo GBR/UK/etc.)
+        raw_page0_lines: Array.isArray(json?.raw?.pages?.[0]?.lines)
+          ? json.raw.pages[0].lines.map(l => l?.content).filter(Boolean)
+          : null
+      };
+
+      const docEl = document.getElementById('Doc');
+      if (docEl) docEl.value = "[OCR DEBUG]\n" + JSON.stringify(dbg, null, 2);
+    }catch(_){/* no-op */}
+
     const mapped = mapBackendToFilFields(json.parsed || {});
     fillFormFromParsed(mapped);
   } catch (err) {
     console.error(err);
+    try{
+      const docEl = document.getElementById('Doc');
+      if (docEl) docEl.value = "[OCR ERROR]\n" + String(err?.message || err);
+    }catch(_){/* no-op */}
     alert("Error al procesar la imagen del DNI. Revisa consola.");
   }
 });
