@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>FILIATRON</title>
+  <title>DECLARATRON</title>
 
   <style>
       :root{
@@ -199,10 +199,14 @@ h1::after{
       border-color:#ffc107 !important;
       box-shadow:0 0 0 2px rgba(255,193,7,.18) inset;
     }
+  #readAnalyzeFile{
+  font-size: 28px;   /* prueba 26–32px */
+  line-height: 1;
+}
   </style>
 </head>
 <body>
-<h1 data-title="FILIATRON">FILIATRON</h1>
+<h1 data-title="FILIATRON">DECLARATRON</h1>
 
 <div class="grid">
   <div class="card">
@@ -211,16 +215,22 @@ h1::after{
       <!-- 1) BOTONES DNI: Foto + Archivo -->
       <div class="span2">
         <div class="row center" style="margin:6px 0 10px 0">
-          <button class="btn" id="readAnalyze">Integrar DNI (foto) 🪪</button>
-          <button class="btn secondary" id="readAnalyzeFile">Integrar DNI (archivo) 🗂️</button>
+          <button class="btn" style="display:none" id="readAnalyze">ID 📷</button>
+          <button class="btn secondary" id="readAnalyzeFile">📷</button>
           <input type="file" id="dniCameraInput" accept="image/*" capture="environment" style="display:none">
           <input type="file" id="dniFileInput" accept="image/*" style="display:none">
         </div>
       </div>
 
       <!-- 2) CAMPOS FILIACIÓN -->
+       <div><label>Condición</label>
+        <select id="Condicion">
+          <option></option><option>Perjudicado</option><option>Testigo</option>
+        </select>
+      </div>
+       <div><label>Teléfono</label><input id="Telefono" inputmode="numeric" pattern="[0-9 ]*"></div>
       <div><label>Nombre</label><input id="Nombre"></div>
-      <div><label>Apellidos (MAYÚSCULAS)</label><input id="Apellidos"></div>
+      <div><label>Apellidos</label><input id="Apellidos"></div>
       <div><label>Tipo de documento</label><input id="Tipo"></div>
       <div><label>Nº documento</label><input id="Numero"></div>
       <div><label>Sexo</label>
@@ -231,14 +241,7 @@ h1::after{
       <div><label>Fecha de nacimiento</label><input id="Nacimiento"></div>
       <div><label>Lugar de nacimiento</label><input id="Lugar"></div>
       <div class="span2"><label>Domicilio</label><input id="Domicilio"></div>
-      <div><label>Teléfono</label><input id="Telefono" inputmode="numeric" pattern="[0-9 ]*"></div>
-      <div><label>Condición (oblig.)</label>
-        <select id="Condicion">
-          <option></option><option>Requirente</option><option>Perjudicado</option>
-          <option>Testigo</option><option>Identificado</option>
-        </select>
-      </div>
-
+     
       <!-- 3) LISTA / CONTADOR / AGREGAR -->
       <div class="span2 row center" style="margin-top:10px">
         <span class="badge">Filiaciones: <span id="countF">0</span></span>
@@ -247,17 +250,11 @@ h1::after{
         <ul class="list" id="listaF"></ul>
       </div>
       <div class="span2 row center" style="margin-top:8px">
-        <button class="btn" id="addFiliacion">👤 Agregar filiación al expediente</button>
-      </div>
-
-      <!-- 4) COMPARECENCIA GPT -->
-      <div class="span2 row center" style="margin-top:10px">
-        <button class="btn" id="gptComparecencia" title="Abrir Comparecencia GPT">Comparecencia GPT 🤖</button>
-      </div>
-
-      <!-- 5) PEGAR COMPARECENCIA -->
-      <div class="span2 row center" style="margin-top:10px">
-        <button class="btn" id="integrarDoc">Pegar comparecencia 📋</button>
+        <button class="btn" id="addFiliacion">👤 Agregar</button>
+         <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
+      
+        <button class="btn" id="gptComparecencia" title="Abrir Comparecencia GPT">DENUNCIA GPT 🤖</button>
+     <button class="btn" id="integrarDoc">📋</button>
       </div>
 
       <!-- 6) DOC -->
@@ -267,9 +264,9 @@ h1::after{
 
       <!-- 7) RESTO BOTONES (sin cifrado) -->
       <div class="span2 row center" style="margin-top:10px">
-        <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
-        <button class="btn" id="download">⬇️ Descargar proyecto (.json)</button>
-        <button class="btn secondary" id="loadPlain">⬆️ Cargar proyecto (.json)</button>
+       
+        <button class="btn" id="download">⬇️ Descargar</button>
+        <button class="btn secondary" style="display:none" id="loadPlain">⬆️ Cargar</button>
         <input type="file" id="plainInput" accept=".json" style="display:none">
       </div>
 
@@ -277,6 +274,9 @@ h1::after{
   </div>
 </div>
 
+<script src="provincias_es.js"></script>
+<script src="municipios.js"></script>
+<script src="paises.js"></script>
 <script>
 // ======================================================
 // FILIATRON — PARSER NS (1 sola línea, sin espacios)
@@ -350,9 +350,9 @@ let MUNICIPIOS_SET = new Set([
 let MUNICIPIOS_NOSPACE = new Map([...MUNICIPIOS_SET].map(m => [m.replace(/\s+/g,''), m]));
 
 const PROVINCIAS = [
-  "A CORUÑA","ÁLAVA","ALAVA","ALBACETE","ALICANTE","ALMERÍA","ALMERIA","ASTURIAS","ÁVILA","AVILA",
+  "A CORUÑA","ALAVA","ALAVA","ALBACETE","ALICANTE","ALMERIA","ALMERIA","ASTURIAS","ÁVILA","AVILA",
   "BADAJOZ","BARCELONA","BIZKAIA","VIZCAYA","BURGOS","CÁCERES","CACERES","CÁDIZ","CADIZ","CANTABRIA",
-  "CASTELLÓN","CASTELLON","CIUDAD REAL","CÓRDOBA","CORDOBA","CUENCA","GIRONA","GERONA","GRANADA",
+  "CASTELLON","CASTELLON","CIUDAD REAL","CÓRDOBA","CORDOBA","CUENCA","GIRONA","GERONA","GRANADA",
   "GUADALAJARA","GUIPÚZCOA","GUIPUZCOA","GIPUZKOA","HUELVA","HUESCA","ILLES BALEARS","ISLAS BALEARES",
   "JAÉN","JAEN","LA RIOJA","LAS PALMAS","LEÓN","LEON","LLEIDA","LUGO","MADRID","MÁLAGA","MALAGA",
   "MURCIA","NAVARRA","NAFARROA","OURENSE","ORENSE","PALENCIA","PONTEVEDRA","SALAMANCA",
@@ -997,6 +997,424 @@ function parseByRules(ocrRaw){
   return out;
 }
 
+// ---------- Canonicalización (PROVINCIAS/MUNICIPIOS/PAISES desde JS externos) ----------
+// Requiere (si están cargados):
+//  - window.PROVINCIAS_ES (array)
+//  - window.MUNICIPIOS_ES (objeto { PROV: [MUN...] })
+//  - window.PAISES (objeto con grupos/items)
+
+function _normKey(s){
+  return (s||"")
+    .toString()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s\-\/]/g,'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function _buildCanonIndexes(){
+  const provArr = Array.isArray(window.PROVINCIAS_ES) ? window.PROVINCIAS_ES : [];
+  const muniObj = (window.MUNICIPIOS_ES && typeof window.MUNICIPIOS_ES === 'object') ? window.MUNICIPIOS_ES : null;
+
+  // Provincias
+  const provSet = new Set();
+  const provMap = new Map();
+  for (const p of provArr){
+    const canon = String(p||"").trim();
+    if (!canon) continue;
+    provSet.add(canon);
+    const k = _normKey(canon);
+    if (!provMap.has(k)) provMap.set(k, canon);
+  }
+
+  // Municipios por provincia + índice global
+  const muniByProv = new Map(); // provCanon -> Map(norm -> canonMun)
+  const muniGlobal = new Map(); // norm -> {mun, prov}
+  if (muniObj){
+    for (const provKey of Object.keys(muniObj)){
+      const list = Array.isArray(muniObj[provKey]) ? muniObj[provKey] : [];
+      // En tu municipios.js la clave suele ser la provincia en mayúsculas (sin tildes a veces). La normalizamos y la resolvemos a canon.
+      const provCanon = provMap.get(_normKey(provKey)) || String(provKey||"").trim();
+      if (!muniByProv.has(provCanon)) muniByProv.set(provCanon, new Map());
+      const mMap = muniByProv.get(provCanon);
+      for (const m of list){
+        const mun = String(m||"").trim();
+        if (!mun) continue;
+        const mk = _normKey(mun);
+        if (!mMap.has(mk)) mMap.set(mk, mun);
+        // Índice global (si hay duplicados entre provincias, nos quedamos con el primero; para domicilio/nacimiento normalmente hay prov)
+        if (!muniGlobal.has(mk)) muniGlobal.set(mk, { mun, prov: provCanon });
+      }
+    }
+  }
+
+  // Países (aplana PAISES.groups/items)
+  const paisSet = new Set();
+  const paisMap = new Map();
+  try{
+    const P = window.PAISES;
+    const addPais = (x)=>{
+      const c = String(x||"").trim();
+      if (!c) return;
+      paisSet.add(c);
+      const k=_normKey(c);
+      if(!paisMap.has(k)) paisMap.set(k,c);
+    };
+    if (P){
+      if (Array.isArray(P.featured)) P.featured.forEach(addPais);
+      if (Array.isArray(P.groups)){
+        P.groups.forEach(g=>{
+          if (g && Array.isArray(g.items)) g.items.forEach(addPais);
+        });
+      }
+    }
+  }catch(_){/* noop */}
+
+  return { provSet, provMap, muniByProv, muniGlobal, paisSet, paisMap };
+}
+
+const __CANON = _buildCanonIndexes();
+
+function canonProvincia(raw){
+  const k = _normKey(raw);
+  return __CANON.provMap.get(k) || "";
+}
+
+function canonMunicipio(raw, provCanon){
+  const mk = _normKey(raw);
+  if (!mk) return "";
+  if (provCanon && __CANON.muniByProv.has(provCanon)){
+    const m = __CANON.muniByProv.get(provCanon).get(mk);
+    if (m) return m;
+  }
+  const g = __CANON.muniGlobal.get(mk);
+  return g ? g.mun : "";
+}
+
+
+function canonPais(raw){
+  const k = _normKey(raw);
+  return __CANON.paisMap.get(k) || "";
+}
+
+// --- ISO3 (MRZ) → País canónico (PAISES.js) ---
+// Nota: PAISES.js contiene nombres en castellano (mayúsculas). El MRZ suele traer ISO-3166-1 alpha-3.
+const ISO3_TO_PAIS = {
+  // Europa
+  ESP: "ESPAÑA",
+  PRT: "PORTUGAL",
+  FRA: "FRANCIA",
+  DEU: "ALEMANIA",
+  ITA: "ITALIA",
+  NLD: "PAISES BAJOS",
+  BEL: "BELGICA",
+  LUX: "LUXEMBURGO",
+  CHE: "SUIZA",
+  AUT: "AUSTRIA",
+  GBR: "REINO UNIDO",
+  IRL: "IRLANDA",
+  ISL: "ISLANDIA",
+  NOR: "NORUEGA",
+  SWE: "SUECIA",
+  FIN: "FINLANDIA",
+  DNK: "DINAMARCA",
+  POL: "POLONIA",
+  CZE: "REPUBLICA CHECA",
+  SVK: "REPUBLICA ESLOVACA",
+  HUN: "HUNGRIA",
+  ROU: "RUMANIA",
+  BGR: "BULGARIA",
+  GRC: "GRECIA",
+  CYP: "CHIPRE",
+  HRV: "CROACIA",
+  SVN: "ESLOVENIA",
+  EST: "ESTONIA",
+  LVA: "LETONIA",
+  LTU: "LITUANIA",
+  UKR: "UCRANIA",
+  RUS: "RUSIA",
+  BLR: "BIELORRUSIA",
+  SRB: "SERBIA",
+  MNE: "MONTENEGRO",
+  MKD: "MACEDONIA DEL NORTE",
+  ALB: "ALBANIA",
+  BIH: "BOSNIA HERZEGOVINA",
+  MLT: "MALTA",
+  AND: "ANDORRA",
+  MCO: "MONACO",
+  SMR: "SAN MARINO",
+  VAT: "CIUDAD DEL VATICANO",
+  LIE: "LIECHTENSTEIN",
+  KOS: "KOSOVO",
+  // América
+  USA: "ESTADOS UNIDOS AMERICA",
+  CAN: "CANADA",
+  MEX: "MEXICO",
+  GTM: "GUATEMALA",
+  HND: "HONDURAS",
+  SLV: "EL SALVADOR",
+  NIC: "NICARAGUA",
+  CRI: "COSTA RICA",
+  PAN: "PANAMA",
+  CUB: "CUBA",
+  DOM: "REPUBLICA DOMINICANA",
+  HTI: "HAITI",
+  JAM: "JAMAICA",
+  COL: "COLOMBIA",
+  VEN: "VENEZUELA",
+  ECU: "ECUADOR",
+  PER: "PERU",
+  BOL: "BOLIVIA",
+  CHL: "CHILE",
+  ARG: "ARGENTINA",
+  URY: "URUGUAY",
+  PRY: "PARAGUAY",
+  BRA: "BRASIL",
+  GUY: "GUYANA",
+  SUR: "SURINAME",
+  BHS: "BAHAMAS",
+  BRB: "BARBADOS",
+  BLZ: "BELICE",
+  ATG: "ANTIGUA Y BARBUDA",
+  DMA: "DOMINICA",
+  GRD: "GRANADA",
+  KNA: "SAN CRISTOBAL Y NIEVES",
+  LCA: "SANTA LUCIA",
+  VCT: "SAN VICENTE Y LAS GRANADINAS",
+  TTO: "TRINIDAD Y TOBAGO",
+  // África
+  MAR: "MARRUECOS",
+  DZA: "ARGELIA",
+  TUN: "TUNEZ",
+  LBY: "LIBIA",
+  EGY: "EGIPTO",
+  SDN: "SUDAN",
+  SSD: "SUDAN DEL SUR",
+  ETH: "ETIOPIA",
+  SOM: "SOMALIA",
+  KEN: "KENIA",
+  TZA: "TANZANIA",
+  UGA: "UGANDA",
+  RWA: "RUANDA",
+  BDI: "BURUNDI",
+  COD: "REPUBLICA DEMOCRATICA CONGO",
+  COG: "REPUBLICA CONGO",
+  CMR: "CAMERUN",
+  NGA: "NIGERIA",
+  GHA: "GHANA",
+  CIV: "COSTA MARFIL",
+  SEN: "SENEGAL",
+  MLI: "MALI",
+  NER: "NIGER",
+  TCD: "CHAD",
+  GAB: "GABON",
+  AGO: "ANGOLA",
+  ZMB: "ZAMBIA",
+  ZWE: "ZIMBABUE",
+  BWA: "BOTSUANA",
+  NAM: "NAMIBIA",
+  ZAF: "SUDAFRICA",
+  MOZ: "MOZAMBIQUE",
+  MDG: "MADAGASCAR",
+  CPV: "CABO VERDE",
+  GIN: "GUINEA",
+  GNB: "GUINEA BISSAU",
+  SLE: "SIERRA LEONA",
+  LBR: "LIBERIA",
+  GMB: "GAMBIA",
+  MRT: "MAURITANIA",
+  ESH: "SAHARA OCCIDENTAL",
+  // Asia
+  TUR: "TURQUIA",
+  ISR: "ISRAEL",
+  PSE: "PALESTINA",
+  LBN: "LIBANO",
+  SYR: "SIRIA",
+  IRQ: "IRAK",
+  IRN: "IRAN",
+  SAU: "ARABIA SAUDI",
+  ARE: "EMIRATOS ARABES UNIDOS",
+  QAT: "CATAR",
+  KWT: "KUWAIT",
+  OMN: "OMAN",
+  YEM: "YEMEN",
+  JOR: "JORDANIA",
+  AFG: "AFGANISTAN",
+  PAK: "PAKISTAN",
+  IND: "INDIA",
+  BGD: "BANGLADESH",
+  LKA: "SRI LANKA",
+  NPL: "NEPAL",
+  BTN: "BUTAN",
+  MMR: "BIRMANIA",
+  THA: "TAILANDIA",
+  VNM: "VIETNAM",
+  KHM: "CAMBOYA",
+  LAO: "LAOS",
+  MYS: "MALASIA",
+  SGP: "SINGAPUR",
+  IDN: "INDONESIA",
+  PHL: "FILIPINAS",
+  CHN: "CHINA",
+  JPN: "JAPON",
+  KOR: "COREA DEL SUR",
+  PRK: "COREA DEL NORTE",
+  MNG: "MONGOLIA",
+  KAZ: "KAZAJISTAN",
+  KGZ: "KIRGUISTAN",
+  TJK: "TAYIKISTAN",
+  TKM: "TURKMENISTAN",
+  UZB: "UZBEKISTAN",
+  GEO: "GEORGIA",
+  ARM: "ARMENIA",
+  AZE: "AZERBAYAN",
+  // Oceanía
+  AUS: "AUSTRALIA",
+  NZL: "NUEVA ZELANDA",
+  PNG: "PAPUA NUEVA GUINEA",
+  FJI: "FIYI",
+  SLB: "ISLAS SALOMON",
+  MHL: "ISLAS MARSHALL",
+  FSM: "MICRONESIA",
+  KIR: "KIRIBATI",
+  NRU: "NAURU",
+  PLW: "PALAOS",
+  WSM: "SAMOA",
+  TON: "TONGA",
+  TUV: "TUVALU",
+  VUT: "VANUATU"
+};
+
+function iso3ToPaisName(raw){
+  const s = (raw||"").toString().trim().toUpperCase();
+  if (!s) return "";
+  if (/^[A-Z]{3}$/.test(s)) return ISO3_TO_PAIS[s] || "";
+  return "";
+}
+
+function enforceCanonicalNacionalidad(){
+  const el = document.getElementById('Nacionalidad');
+  if (!el || !el.value) return;
+
+  const raw0 = el.value.toString().trim();
+  if (!raw0) return;
+
+  // 1) Si viene ISO3 (ESP/GBR/IND...), conviértelo a nombre objetivo en castellano
+  const isoHit = iso3ToPaisName(raw0);
+  const raw = isoHit || raw0;
+
+  // 2) Canoniza contra PAISES.js (literal exacto)
+  const canon = canonPais(raw);
+  if (canon){
+    el.value = tcase(canon);
+  }
+}
+
+// Aplica corrección canónica a:
+//  - Lugar (nacimiento): "Municipio, Provincia" o solo "Provincia"
+//  - Domicilio: intenta corregir los 2 últimos tokens como "Municipio, Provincia"
+function enforceCanonicalLugarYDomicilio(){
+  // Si no hay catálogos cargados, no hacemos nada.
+  const hasProv = (__CANON.provMap && __CANON.provMap.size);
+  const hasMuni = (__CANON.muniGlobal && __CANON.muniGlobal.size);
+  if (!hasProv && !hasMuni) return;
+
+    // --- NACIMIENTO (Lugar) ---
+  const lugarEl = document.getElementById('Lugar');
+  const natEl = document.getElementById('Nacionalidad');
+
+  // Nacionalidad canónica (para decidir si es España y para fallback)
+  const natRaw0 = (natEl && natEl.value) ? natEl.value.toString().trim() : "";
+  const natIso  = iso3ToPaisName(natRaw0);
+  const natCanon = canonPais(natIso || natRaw0);
+  const natCanonNorm = _normKey(natCanon);
+  const espNorm = _normKey(canonPais('ESPAÑA') || 'ESPAÑA');
+  const natIsSpain = !!natCanon && (natCanonNorm === espNorm);
+
+  // Si no hay Lugar pero hay Nacionalidad extranjera, imponemos país = nacionalidad.
+  if (lugarEl && (!lugarEl.value || !lugarEl.value.toString().trim())){
+    if (natCanon && !natIsSpain){
+      lugarEl.value = `${tcase(natCanon)}`;
+    }
+  }
+
+  if (lugarEl && lugarEl.value){
+    const raw = lugarEl.value.toString().trim();
+
+    // REGLA PRIORITARIA:
+    // Si la nacionalidad NO es España => Lugar debe ser SIEMPRE un PAÍS.
+    // Por defecto: Lugar = Nacionalidad.
+    // Solo usamos otro país si Lugar contiene un país válido distinto.
+    if (natCanon && !natIsSpain){
+      const parts2 = raw.split(',').map(s=>s.trim()).filter(Boolean);
+      const lastTok = parts2.length ? parts2[parts2.length-1] : raw;
+
+      const isoHit = iso3ToPaisName(lastTok) || iso3ToPaisName(raw);
+      const paisTry = canonPais(isoHit || lastTok) || canonPais(raw);
+
+      // Si Lugar trae un país válido y es distinto, úsalo; si no, fuerza nacionalidad.
+      const finalPais = (paisTry && _normKey(paisTry) !== natCanonNorm) ? paisTry : natCanon;
+      lugarEl.value = `${tcase(finalPais)}`;
+    } else {
+      // Nacionalidad España (o no disponible): lógica España municipio/provincia
+      const parts = raw.split(',').map(s=>s.trim()).filter(Boolean);
+      let munRaw = "", provRaw = "";
+      if (parts.length >= 2){
+        provRaw = parts[parts.length-1];
+        munRaw  = parts.slice(0, parts.length-1).join(', ');
+      } else if (parts.length === 1){
+        const p = canonProvincia(parts[0]);
+        if (p) provRaw = parts[0];
+        else munRaw = parts[0];
+      }
+
+      const provCanon = provRaw ? canonProvincia(provRaw) : "";
+      const munCanon  = munRaw ? canonMunicipio(munRaw, provCanon) : "";
+
+      if (provCanon && munCanon){
+        lugarEl.value = `${tcase(munCanon)}, ${tcase(provCanon)}`;
+      } else if (provCanon && !munCanon){
+        lugarEl.value = `${tcase(provCanon)}`;
+      } else if (!provCanon && munCanon){
+        lugarEl.value = `${tcase(munCanon)}`;
+      } else {
+        // Fallback extranjero: SOLO país. Si no hay país válido, y hay nacionalidad, usa nacionalidad.
+        const parts2 = raw.split(',').map(s=>s.trim()).filter(Boolean);
+        const lastTok = parts2.length ? parts2[parts2.length-1] : raw;
+        const isoHit = iso3ToPaisName(lastTok) || iso3ToPaisName(raw);
+        const paisTry = canonPais(isoHit || lastTok) || canonPais(raw);
+
+        const finalPais = paisTry || natCanon;
+        if (finalPais){
+          lugarEl.value = `${tcase(finalPais)}`;
+        }
+      }
+    }
+  }
+
+  // --- DOMICILIO ---
+  const domEl = document.getElementById('Domicilio');
+  if (domEl && domEl.value){
+    const raw = domEl.value.toString().trim();
+    const parts = raw.split(',').map(s=>s.trim()).filter(Boolean);
+    if (parts.length >= 2){
+      const provRaw = parts[parts.length-1];
+      const munRaw  = parts[parts.length-2];
+      const provCanon = canonProvincia(provRaw);
+      const munCanon  = canonMunicipio(munRaw, provCanon);
+
+      // Solo reescribimos si al menos provincia o municipio se pueden canonizar.
+      if (provCanon || munCanon){
+        const newParts = parts.slice(0, -2);
+        newParts.push(munCanon ? tcase(munCanon) : tcase(munRaw));
+        newParts.push(provCanon ? tcase(provCanon) : tcase(provRaw));
+        domEl.value = newParts.join(', ');
+      }
+    }
+  }
+}
+
 // ---------- UI ----------
 function validateField(el){
   if (!el) return;
@@ -1120,6 +1538,8 @@ for (const id of ['Nombre','Apellidos','Padres','Lugar','Domicilio','Numero']){
   if (p._flags.Numero) document.getElementById('Numero')?.classList.add('uncertain');
   }
 
+  enforceCanonicalNacionalidad();
+  enforceCanonicalLugarYDomicilio();
   validateAll();
 }
 function clearFormOnly(){
@@ -1158,7 +1578,7 @@ if (btnArchivo && inputArchivo){
   });
 }
 document.getElementById('gptComparecencia').addEventListener('click', ()=>{
-  window.open('https://chatgpt.com/g/g-68fe060630348191b62c44416164a37d-comparecencia','_blank','noopener');
+  window.open('https://chatgpt.com/g/g-69014d0cf61881918dd3773943228c6b-gtd','_blank','noopener');
 });
 async function readFromClipboard(){
   try{ const txt = await navigator.clipboard.readText(); return txt || ""; }
