@@ -91,6 +91,20 @@ h1::after{
       box-shadow:0 4px 14px rgba(0,0,0,.35);
     }
     .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center}
+    .nowrap3{flex-wrap:nowrap; gap:8px}
+    .nowrap3 .btn{white-space:nowrap}
+
+    /* En móvil: comprime botones para que quepan en una sola fila */
+    @media(max-width:520px){
+      .nowrap3{gap:6px}
+      .nowrap3 .btn{
+        padding:8px 10px;
+        font-size:12px;
+        border-radius:10px;
+      }
+      /* El icono 📋 necesita un poco menos de padding para no forzar salto */
+      #integrarDoc{padding:8px 9px}
+    }
     .row.center{justify-content:center}                   /* centrado de botones */
     .btn{
       border:none;
@@ -250,12 +264,12 @@ h1::after{
       <div class="span2 row center" style="margin-top:8px">
         <button class="btn" id="addFiliacion">👤 Agregar</button>
         <span class="badge">Filiaciones: <span id="countF">0</span></span>
-        <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
       </div>
 
-      <div class="span2 row center" style="margin-top:8px">
-        <button class="btn" id="gptComparecencia" title="Abrir Comparecencia GPT">DENUNCIA GPT 🤖</button>
-        <button class="btn" id="integrarDoc">📋</button>
+      <div class="span2 row center nowrap3" style="margin-top:8px">
+        <button class="btn" id="gptComparecencia" title="Abrir Denuncia">DENUNCIA 🤖</button>
+        <button class="btn" id="integrarDoc" title="Pegar desde portapapeles">📋</button>
+        <button class="btn" id="btnDiligencia" title="Abrir Diligencia">DILIGENCIA 🤖</button>
       </div>
 
       <!-- 6) DOC -->
@@ -265,8 +279,8 @@ h1::after{
 
       <!-- 7) RESTO BOTONES (sin cifrado) -->
       <div class="span2 row center" style="margin-top:10px">
-       
         <button class="btn" id="download">⬇️ Descargar</button>
+        <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
         <button class="btn secondary" style="display:none" id="loadPlain">⬆️ Cargar</button>
         <input type="file" id="plainInput" accept=".json" style="display:none">
       </div>
@@ -1586,6 +1600,9 @@ if (btnArchivo && inputArchivo){
 }
 document.getElementById('gptComparecencia').addEventListener('click', ()=>{
   window.open('https://chatgpt.com/g/g-69014d0cf61881918dd3773943228c6b-gtd','_blank','noopener');
+});
+document.getElementById('btnDiligencia').addEventListener('click', ()=>{
+  window.open('https://chatgpt.com/share/69448a52-ffc8-8000-8576-9c5192ebca5c','_blank','noopener');
 });
 async function readFromClipboard(){
   try{ const txt = await navigator.clipboard.readText(); return txt || ""; }
