@@ -204,35 +204,21 @@ h1::after{
 <body>
 <h1 data-title="FILIATRON">FILIATRON</h1>
 
-<div class="grid two">
-  <!-- ACCIONES -->
-  <div class="card">
-    <div class="row center">
-      <button class="btn" id="gptComparecencia" title="Abrir Comparecencia GPT">Comparecencia GPT 🤖</button>
-    </div>
-
-    <div class="row center" style="margin-top:10px">
-      <span class="badge">Filiaciones: <span id="countF">0</span></span>
-      <ul class="list" id="listaF"></ul>
-    </div>
-  </div>
-
-  <!-- COMPARECENCIA + CAMPOS -->
+<div class="grid">
   <div class="card">
     <div class="fields">
+
+      <!-- 1) BOTONES DNI: Foto + Archivo -->
       <div class="span2">
-        <!-- Texto 'Comparecencia (DOC)' eliminado -->
-        <div class="row center" style="margin:6px 0 8px 0">
-          <button class="btn" id="integrarDoc">Pegar comparecencia 📋</button>
-        </div>
-        <textarea id="Doc"></textarea>
-        <div class="row center" style="margin:8px 0 6px 0">
-          <button class="btn" id="readAnalyze">Integrar DNI 🪪</button>
-          <input type="file" id="dniImageInput" accept="image/*" capture="environment" style="display:none">
+        <div class="row center" style="margin:6px 0 10px 0">
+          <button class="btn" id="readAnalyze">Integrar DNI (foto) 🪪</button>
+          <button class="btn secondary" id="readAnalyzeFile">Integrar DNI (archivo) 🗂️</button>
+          <input type="file" id="dniCameraInput" accept="image/*" capture="environment" style="display:none">
+          <input type="file" id="dniFileInput" accept="image/*" style="display:none">
         </div>
       </div>
 
-      <!-- Ficha de filiación actual -->
+      <!-- 2) CAMPOS FILIACIÓN -->
       <div><label>Nombre</label><input id="Nombre"></div>
       <div><label>Apellidos (MAYÚSCULAS)</label><input id="Apellidos"></div>
       <div><label>Tipo de documento</label><input id="Tipo"></div>
@@ -253,14 +239,40 @@ h1::after{
         </select>
       </div>
 
-      <div class="span2"></div>
-      <div class="span2 row center" style="margin-top:6px">
-        <button class="btn" id="addFiliacion">👤 Agregar filiación al expediente</button>
-        <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
-        <button class="btn" id="download">⬇️ Descargar cifrado 🔐 </button>
-        <button class="btn secondary" id="loadEncrypted">⬆️ Cargar cifrado 🔐 </button>
-        <input type="file" id="encryptedInput" accept=".enc,.txt,.json" style="display:none">
+      <!-- 3) LISTA / CONTADOR / AGREGAR -->
+      <div class="span2 row center" style="margin-top:10px">
+        <span class="badge">Filiaciones: <span id="countF">0</span></span>
       </div>
+      <div class="span2 row center" style="margin-top:6px">
+        <ul class="list" id="listaF"></ul>
+      </div>
+      <div class="span2 row center" style="margin-top:8px">
+        <button class="btn" id="addFiliacion">👤 Agregar filiación al expediente</button>
+      </div>
+
+      <!-- 4) COMPARECENCIA GPT -->
+      <div class="span2 row center" style="margin-top:10px">
+        <button class="btn" id="gptComparecencia" title="Abrir Comparecencia GPT">Comparecencia GPT 🤖</button>
+      </div>
+
+      <!-- 5) PEGAR COMPARECENCIA -->
+      <div class="span2 row center" style="margin-top:10px">
+        <button class="btn" id="integrarDoc">Pegar comparecencia 📋</button>
+      </div>
+
+      <!-- 6) DOC -->
+      <div class="span2">
+        <textarea id="Doc"></textarea>
+      </div>
+
+      <!-- 7) RESTO BOTONES (sin cifrado) -->
+      <div class="span2 row center" style="margin-top:10px">
+        <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
+        <button class="btn" id="download">⬇️ Descargar proyecto (.json)</button>
+        <button class="btn secondary" id="loadPlain">⬆️ Cargar proyecto (.json)</button>
+        <input type="file" id="plainInput" accept=".json" style="display:none">
+      </div>
+
     </div>
   </div>
 </div>
@@ -272,86 +284,6 @@ h1::after{
 
 const expediente = { doc: "", filiaciones: [] };
 
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
-
-function toBase64(arr){
-  let str = "";
-  for(let i=0;i<arr.length;i++) str += String.fromCharCode(arr[i]);
-  return btoa(str);
-}
-
-function fromBase64(str){
-  const bin = atob(str);
-  const len = bin.length;
-  const bytes = new Uint8Array(len);
-  for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
-
-async function deriveKey(password, salt){
-  const pwKey = await crypto.subtle.importKey(
-    "raw",
-    textEncoder.encode(password),
-    { name: "PBKDF2" },
-    false,
-    ["deriveKey"]
-  );
-
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 200000,
-      hash: "SHA-256",
-    },
-    pwKey,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt","decrypt"]
-  );
-}
-
-async function encryptJSON(obj, password){
-  const jsonStr = JSON.stringify(obj);
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv   = crypto.getRandomValues(new Uint8Array(12));
-  const key  = await deriveKey(password, salt);
-
-  const cipherBuf = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    textEncoder.encode(jsonStr)
-  );
-
-  const cipherBytes = new Uint8Array(cipherBuf);
-  const full = new Uint8Array(salt.length + iv.length + cipherBytes.length);
-  full.set(salt, 0);
-  full.set(iv, salt.length);
-  full.set(cipherBytes, salt.length + iv.length);
-
-  return toBase64(full);
-}
-
-async function decryptJSON(cipherBase64, password){
-  const full = fromBase64((cipherBase64 || "").trim());
-  if (full.length < 16 + 12 + 1) throw new Error("Datos insuficientes");
-
-  const salt = full.slice(0, 16);
-  const iv   = full.slice(16, 28);
-  const data = full.slice(28);
-
-  const key = await deriveKey(password, salt);
-
-  const plainBuf = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
-    key,
-    data
-  );
-
-  const jsonStr = textDecoder.decode(plainBuf);
-  return JSON.parse(jsonStr);
-}
 
 // ---------- Helpers texto ----------
 const tcase = s => (s||"").toLowerCase().replace(/\b([A-Za-zÁÉÍÓÚÜÑáéíóúüñ])/g,c=>c.toUpperCase());
@@ -1136,80 +1068,6 @@ function getFormAsFiliacion(){
   };
 }
 function fillFormFromParsed(p){
-  (function normalizeNombreApellidos(p){
-  const clean = s => (s||"").replace(/\s+/g,' ').trim();
-  const split = s => clean(s).split(' ').filter(Boolean);
-
- const PARTICULAS = new Set([
-    // ES/PT/IT/NL/DE
-    'DE','DEL','DE LA','DE LAS','DE LOS','LA','LAS','LOS',
-    'DA','DAS','DO','DOS','DI','VAN','VON','DEN','DER','TER','TEN',
-    // UK/IE (comunes)
-    'MC','MAC','ST','STE','SAINT','O','O\''
-  ]);
-
-  const isParticula = (w, next) => {
-    const up = w.toUpperCase();
-    if (PARTICULAS.has(up)) return true;
-    if (next && PARTICULAS.has(`${up} ${next.toUpperCase()}`)) return true;
-    return false;
-  };
-
-  let nombre = clean(p.Nombre);
-  let apellidos = clean(p.Apellidos);
-
-  // Si ambos tienen contenido → no tocar
-  if (nombre && apellidos) return;
-
-  // Unificar tokens desde el campo que tenga algo
-  const tokens = split(nombre || apellidos);
-  if (!tokens.length) return;
-
-  // Separar partículas finales para forzarlas a apellidos
-  let core = [];
-  let tail = [];
-
-  for (let i = 0; i < tokens.length; i++) {
-    const w = tokens[i];
-    const next = tokens[i+1];
-    if (isParticula(w, next)) {
-      tail = tokens.slice(i);
-      break;
-    }
-    core.push(w);
-  }
-
-  if (!tail.length) core = tokens;
-
-  let n = [];
-  let a = [];
-
-  const total = core.length;
-
-  if (total === 1) {
-    n = [core[0]];
-    a = [core[0]];
-  } else if (total === 2) {
-    n = [core[0]];
-    a = [core[1]];
-  } else if (total === 3) {
-    n = [core[0]];
-    a = core.slice(1);
-  } else {
-    n = core.slice(0,2);
-    a = core.slice(2);
-  }
-
-  // Añadir partículas al apellido
-  a = a.concat(tail);
-
-  // Garantía absoluta: ningún campo vacío
-  if (!n.length && a.length) n = [a[0]];
-  if (!a.length && n.length) a = [n[n.length-1]];
-
-  p.Nombre = n.join(' ');
-  p.Apellidos = a.join(' ').toUpperCase();
-})(p);
   // Fallback: si solo viene un "nombre completo" de 2 palabras metido entero en Nombre o en Apellidos,
   // repártelo en 1 nombre + 1 apellido.
   // Casos:
@@ -1281,21 +1139,24 @@ const parsed = parseDocument(ocr);
 }
 
 // ---------- eventos ----------
-document.getElementById('readAnalyze').addEventListener('click', async () => {
-  const choice = confirm(
-    "Aceptar = Usar foto del DNI (cámara o archivo)\nCancelar = Usar texto del portapapeles"
-  );
+const btnFoto = document.getElementById('readAnalyze');
+const btnArchivo = document.getElementById('readAnalyzeFile');
+const inputFoto = document.getElementById('dniCameraInput');
+const inputArchivo = document.getElementById('dniFileInput');
 
-  if (!choice) {
-    const ocr = await readFromClipboard();
-    processOCR(ocr);
-    return;
-  }
+if (btnFoto && inputFoto){
+  btnFoto.addEventListener('click', () => {
+    inputFoto.value = "";
+    inputFoto.click();
+  });
+}
 
-  const input = document.getElementById('dniImageInput');
-  input.value = "";
-  input.click();
-});
+if (btnArchivo && inputArchivo){
+  btnArchivo.addEventListener('click', () => {
+    inputArchivo.value = "";
+    inputArchivo.click();
+  });
+}
 document.getElementById('gptComparecencia').addEventListener('click', ()=>{
   window.open('https://chatgpt.com/g/g-68fe060630348191b62c44416164a37d-comparecencia','_blank','noopener');
 });
@@ -1332,71 +1193,64 @@ document.getElementById('addFiliacion').addEventListener('click', ()=>{
 });
 document.getElementById('clearForm').addEventListener('click', clearFormOnly);
 document.getElementById('Doc').addEventListener('input', (e)=>{ expediente.doc = e.target.value; });
-document.getElementById('download').addEventListener('click', async ()=>{
-  // Si hay datos en la ficha actual, obligamos a agregarlos o limpiarlos
-  const f = getFormAsFiliacion();
-  const anyVal = Object.values(f).some(v => (v||"").trim()!=="");
-  if (anyVal){
-    alert(
-      "Tienes datos en la ficha de filiación que no has agregado al expediente.\n\n" +
-      "Pulsa 'Agregar filiación' o limpia la ficha antes de descargar."
-    );
-    return;
-  }
+const btnDownload = document.getElementById('download');
+if (btnDownload){
+  btnDownload.addEventListener('click', ()=>{
+    // Si hay datos en la ficha actual, obligamos a agregarlos o limpiarlos
+    const f = getFormAsFiliacion();
+    const anyVal = Object.values(f).some(v => (v||"").trim()!=="");
+    if (anyVal){
+      alert(
+        "Tienes datos en la ficha de filiación que no has agregado al expediente.\n\n" +
+        "Pulsa 'Agregar filiación' o limpia la ficha antes de descargar."
+      );
+      return;
+    }
 
-  expediente.doc = document.getElementById('Doc').value || expediente.doc || "";
-  const data = { doc: expediente.doc, filiaciones: expediente.filiaciones };
+    expediente.doc = document.getElementById('Doc').value || expediente.doc || "";
+    const data = { doc: expediente.doc, filiaciones: expediente.filiaciones };
 
-  const password = prompt("Introduce una frase de paso para cifrar el expediente (mínimo 8 caracteres):");
-  if (!password) return;
-  if (password.length < 8){
-    alert("Frase de paso demasiado corta. Usa al menos 8 caracteres.");
-    return;
-  }
+    try{
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const d = new Date(); const pad = n => String(n).padStart(2,'0');
+      const fname = `Proyecto ${pad(d.getHours())}-${pad(d.getMinutes())} ${pad(d.getDate())}_${pad(d.getMonth()+1)}_${d.getFullYear()}.json`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fname;
+      a.click();
+      URL.revokeObjectURL(url);
+    }catch(err){
+      console.error("Error descargando el proyecto:", err);
+      alert("No se ha podido descargar el proyecto.");
+    }
+  });
+}
 
-  try{
-    const cipherBase64 = await encryptJSON(data, password);
-    const blob = new Blob([cipherBase64], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const d = new Date(); const pad = n => String(n).padStart(2,'0');
-    const fname = `Proyecto ${pad(d.getHours())}-${pad(d.getMinutes())} ${pad(d.getDate())}_${pad(d.getMonth()+1)}_${d.getFullYear()}.enc`;
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fname;
-    a.click();
-    URL.revokeObjectURL(url);
-  }catch(err){
-    console.error("Error cifrando el expediente:", err);
-    alert("No se ha podido cifrar el expediente.");
-  }
-});
+const btnLoadPlain = document.getElementById('loadPlain');
+const inputPlain   = document.getElementById('plainInput');
 
-const btnLoadEnc = document.getElementById('loadEncrypted');
-const inputEnc   = document.getElementById('encryptedInput');
-
-if (btnLoadEnc && inputEnc){
-  btnLoadEnc.addEventListener('click', () => {
-    inputEnc.value = "";
-    inputEnc.click();
+if (btnLoadPlain && inputPlain){
+  btnLoadPlain.addEventListener('click', () => {
+    inputPlain.value = "";
+    inputPlain.click();
   });
 
-  inputEnc.addEventListener('change', (e) => {
+  inputPlain.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const text = (ev.target.result || "").toString().trim();
-      if (!text){
-        alert("Archivo vacío o no válido.");
-        return;
-      }
-      const password = prompt("Introduce la frase de paso para descifrar el expediente:");
-      if (!password) return;
+    reader.onload = (ev) => {
       try{
-        const data = await decryptJSON(text, password);
-        if (!data || typeof data !== "object"){
-          throw new Error("Formato inesperado");
+        const text = (ev.target.result || "").toString().trim();
+        if (!text){
+          alert("Archivo vacío o no válido.");
+          return;
         }
+        const data = JSON.parse(text);
+        if (!data || typeof data !== "object") throw new Error("Formato inesperado");
+
         expediente.doc = data.doc || "";
         expediente.filiaciones = Array.isArray(data.filiaciones) ? data.filiaciones : [];
 
@@ -1410,10 +1264,9 @@ if (btnLoadEnc && inputEnc){
         if (docEl) docEl.value = expediente.doc;
         updateCount();
         validateAll();
-        alert("Proyecto cifrado cargado correctamente.");
       }catch(err){
-        console.error("Error al descifrar el expediente:", err);
-        alert("No se ha podido descifrar el expediente. Clave incorrecta o archivo dañado.");
+        console.error("Error al cargar el proyecto:", err);
+        alert("No se ha podido cargar el proyecto. JSON inválido o archivo dañado.");
       }
     };
     reader.readAsText(file);
@@ -1498,7 +1351,7 @@ function mapBackendToFilFields(p){
   };
 }
 
-document.getElementById('dniImageInput').addEventListener('change', async (e) => {
+document.getElementById('dniCameraInput').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
 
@@ -1516,44 +1369,35 @@ document.getElementById('dniImageInput').addEventListener('change', async (e) =>
     const json = JSON.parse(text);
     if (!json || json.ok !== true || !json.parsed) throw new Error("Respuesta inválida del backend");
 
-    // ===============================
-    // DEBUG OCR → volcar en #Doc
-    // (ver exactamente qué usa el backend/parser)
-    // ===============================
+    const mapped = mapBackendToFilFields(json.parsed || {});
+    fillFormFromParsed(mapped);
+  } catch (err) {
+    console.error(err);
     try{
-      const dbg = {
-        ok: json?.ok,
-        error: json?.error || null,
-
-        // Lo que el backend ya “cree” que es (salida)
-        parsed: json?.parsed || null,
-        parsed_final: json?.parsed?.final || null,
-        parsed_mrz: json?.parsed?.mrz || null,
-        parsed_tipo_documento: json?.parsed?.tipo_documento || null,
-        parsed_numero_documento: json?.parsed?.numero_documento || null,
-        parsed_nombre: json?.parsed?.nombre || null,
-        parsed_apellidos: json?.parsed?.apellidos || null,
-        parsed_nacionalidad: json?.parsed?.nacionalidad || null,
-        parsed_fecha_nacimiento: json?.parsed?.fecha_nacimiento || null,
-        parsed_lugar_nacimiento: json?.parsed?.lugar_nacimiento || null,
-
-        // Debug que devuelve el backend
-        server_debug: json?.debug || null,
-
-        // Lo que llega de Azure (entrada real del parser)
-        raw_docType: json?.raw?.documents?.[0]?.docType || null,
-        raw_fields_keys: Object.keys(json?.raw?.documents?.[0]?.fields || {}),
-        raw_mrz_props: json?.raw?.documents?.[0]?.fields?.machineReadableZone?.properties || null,
-
-        // Texto OCR en orden (para ver contaminación tipo GBR/UK/etc.)
-        raw_page0_lines: Array.isArray(json?.raw?.pages?.[0]?.lines)
-          ? json.raw.pages[0].lines.map(l => l?.content).filter(Boolean)
-          : null
-      };
-
       const docEl = document.getElementById('Doc');
-      if (docEl) docEl.value = "[OCR DEBUG]\n" + JSON.stringify(dbg, null, 2);
+      if (docEl) docEl.value = "[OCR ERROR]\n" + String(err?.message || err);
     }catch(_){/* no-op */}
+    alert("Error al procesar la imagen del DNI. Revisa consola.");
+  }
+});
+
+document.getElementById('dniFileInput').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    const res = await fetch(OCR_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageBase64: dataUrl })
+    });
+
+    const text = await res.text();
+    if (!res.ok) throw new Error(text);
+
+    const json = JSON.parse(text);
+    if (!json || json.ok !== true || !json.parsed) throw new Error("Respuesta inválida del backend");
 
     const mapped = mapBackendToFilFields(json.parsed || {});
     fillFormFromParsed(mapped);
