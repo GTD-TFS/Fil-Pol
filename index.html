@@ -21,7 +21,7 @@
       font-family:system-ui,"Segoe UI",Arial;
       color:var(--fg);
       /* Fondo con imagen (se gestiona con pseudo-elementos para asegurar visibilidad) */
-      background:none;
+      background: none; /* background handled in ::before */
       min-height:100dvh;
     }
     /* Capa de fondo visual (no depende de verde.jpg, mantiene estética) */
@@ -30,6 +30,7 @@
       position:fixed;
       inset:0;
       background:
+        url('verde.jpg') center/cover no-repeat fixed,
         radial-gradient(1200px 700px at 20% 10%, rgba(25,124,229,.35), transparent 60%),
         radial-gradient(900px 600px at 80% 30%, rgba(34,197,123,.22), transparent 55%),
         linear-gradient(180deg, rgba(11,18,32,1), rgba(11,18,32,.92));
@@ -243,18 +244,18 @@ h1::after{
       <div class="span2"><label>Domicilio</label><input id="Domicilio"></div>
      
       <!-- 3) LISTA / CONTADOR / AGREGAR -->
-      <div class="span2 row center" style="margin-top:10px">
-        <span class="badge">Filiaciones: <span id="countF">0</span></span>
-      </div>
       <div class="span2 row center" style="margin-top:6px">
         <ul class="list" id="listaF"></ul>
       </div>
       <div class="span2 row center" style="margin-top:8px">
         <button class="btn" id="addFiliacion">👤 Agregar</button>
-         <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
-      
+        <span class="badge">Filiaciones: <span id="countF">0</span></span>
+        <button class="btn secondary broom" id="clearForm" title="Limpiar formulario">🧹</button>
+      </div>
+
+      <div class="span2 row center" style="margin-top:8px">
         <button class="btn" id="gptComparecencia" title="Abrir Comparecencia GPT">DENUNCIA GPT 🤖</button>
-     <button class="btn" id="integrarDoc">📋</button>
+        <button class="btn" id="integrarDoc">📋</button>
       </div>
 
       <!-- 6) DOC -->
@@ -1416,17 +1417,23 @@ function enforceCanonicalLugarYDomicilio(){
 }
 
 // ---------- UI ----------
-function validateField(el){
+function validateField(el, force=false){
   if (!el) return;
   const value = (el.value || "").trim();
-  let ok = false;
 
+  let ok = false;
   if (el.tagName === "INPUT" || el.tagName === "TEXTAREA"){
-    // mínimo 2 caracteres para considerarlo "bien" (borde verde)
     ok = value.length >= 2;
   } else if (el.tagName === "SELECT"){
-    // selects: basta con que tenga algo elegido
     ok = value !== "";
+  }
+
+  // No pintar en rojo al inicio: solo marcar invalid si el usuario ya tocó el campo,
+  // o si se fuerza validación.
+  const touched = el.dataset.touched === "1";
+  if (!force && !touched && !value){
+    el.classList.remove("valid","invalid");
+    return;
   }
 
   el.classList.toggle("valid", ok);
@@ -1697,11 +1704,18 @@ if (btnLoadPlain && inputPlain){
 ["Nombre","Apellidos","Tipo","Numero","Sexo","Nacionalidad","Padres","Nacimiento","Lugar","Domicilio","Telefono","Condicion"].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
+
+  const markTouchedAndValidate = (force=false)=>{
+    el.dataset.touched = "1";
+    validateField(el, force);
+  };
+
   // Validar al salir del campo
-  el.addEventListener("blur", () => validateField(el));
+  el.addEventListener("blur", () => markTouchedAndValidate(true));
+
   // En selects, también al cambiar la opción
   if (el.tagName === "SELECT"){
-    el.addEventListener("change", () => validateField(el));
+    el.addEventListener("change", () => markTouchedAndValidate(true));
   }
 });
 
