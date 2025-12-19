@@ -43,13 +43,29 @@
 
       .gpt-field label{display:block;font-size:12px;color:rgba(207,224,255,.90);margin:0 0 4px;font-weight:900;}
       .gpt-field input,.gpt-field select,.gpt-field textarea{width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);color:#e5e7eb;border:1px solid rgba(255,255,255,.16);border-radius:10px;font:inherit;padding:6px 8px;outline:none;}
+      /* Fecha y hora más compactos */
+      #gptPlFecha,#gptPlHora{
+        padding:4px 6px;
+        font-size:12px;
+        height:28px;
+      }
       .gpt-field input:focus,.gpt-field textarea:focus,.gpt-field select:focus{border-color:rgba(124,156,255,.60);box-shadow:0 0 0 3px rgba(124,156,255,.16);}
 
       /* textarea solo para salida; baja altura */
       .gpt-field textarea{min-height:36px;resize:vertical;}
 
       .gpt-row{display:flex;gap:8px;flex-wrap:wrap;}
-      .gpt-pill{display:inline-flex;gap:6px;align-items:center;padding:5px 8px;border-radius:9999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);font-size:12px;}
+      .gpt-pill{
+        display:inline-flex;
+        gap:6px;
+        align-items:center;
+        padding:5px 8px;
+        margin-right:8px; /* separación entre opciones */
+        border-radius:9999px;
+        background:rgba(255,255,255,.08);
+        border:1px solid rgba(255,255,255,.14);
+        font-size:12px;
+      }
 
       .gpt-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;}
       .gpt-btn{border:none;cursor:pointer;border-radius:12px;padding:9px 12px;font-weight:900;letter-spacing:.3px;color:#fff;background:rgba(255,255,255,.08);box-shadow:0 0 14px rgba(255,255,255,.16);transition:transform .15s ease, box-shadow .2s ease;}
@@ -116,7 +132,7 @@
 
           <div class="gpt-field">
             <label>Cámaras</label>
-            <div class="gpt-row" style="margin-top:0">
+            <div class="gpt-row" style="margin-top:6px">
               <span class="gpt-pill"><input type="radio" name="gptPlCamaras" value="SI" id="gptPlCamSi"><label for="gptPlCamSi" style="margin:0">Sí</label></span>
               <span class="gpt-pill"><input type="radio" name="gptPlCamaras" value="NO" id="gptPlCamNo"><label for="gptPlCamNo" style="margin:0">No</label></span>
               <span class="gpt-pill"><input type="radio" name="gptPlCamaras" value="DESCONOCE" id="gptPlCamDes" checked><label for="gptPlCamDes" style="margin:0">?</label></span>
