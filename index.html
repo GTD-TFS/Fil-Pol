@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="es">
 <head>
+  <link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0b1220">
+
+<!-- iOS (Safari): no usa bien el manifest, necesita estos meta + icon -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DECLARATRON">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>DECLARATRON</title>
@@ -218,6 +226,26 @@ h1::after{
   font-size: 28px;   /* prueba 26–32px */
   line-height: 1;
 }
+    /* Botón Plantilla: pequeño y anclado a la izquierda sin mover el centrado del resto */
+    #btnPlantillaHechos{
+      padding:6px 8px !important;
+      font-size:12px !important;
+      line-height:1 !important;
+      border-radius:10px !important;
+      margin:0 !important;
+      transform:none !important;
+      position:absolute;
+      left:0;
+      top:50%;
+      transform:translateY(-50%);
+    }
+
+    /* Fila de botones con un margen izquierdo para que el centrado no se solape con Plantilla */
+    .toolbar-center{
+      position:relative;
+      justify-content:center !important;
+      padding-left:44px; /* reserva hueco para 🧾 */
+    }
   </style>
 </head>
 <body>
@@ -266,7 +294,7 @@ h1::after{
         <span class="badge">Filiaciones: <span id="countF">0</span></span>
       </div>
 
-      <div class="span2 row center nowrap3" style="margin-top:8px">
+      <div class="span2 row nowrap3 toolbar-center" style="margin-top:8px">
            <button class="btn secondary" id="btnPlantillaHechos" title="Plantilla rápida para pegar en GPT">🧾</button>
         <button class="btn" id="gptComparecencia" title="Abrir Denuncia">DENUNCIA 🤖</button>
         <button class="btn" id="integrarDoc" title="Pegar desde portapapeles">⬇️</button>
