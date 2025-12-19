@@ -40,27 +40,33 @@
       .gpt-modal-grid{display:grid;gap:6px;grid-template-columns:1fr;}
       @media(min-width:720px){.gpt-modal-grid{grid-template-columns:1fr 1fr;}}
       .gpt-span2{grid-column:1/-1;}
-
+      /* Fila fija de 2 columnas (Fecha/Hora) */
+      .gpt-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+      .gpt-row2 .gpt-field{min-width:0;}
       .gpt-field label{display:block;font-size:12px;color:rgba(207,224,255,.90);margin:0 0 4px;font-weight:900;}
       .gpt-field input,.gpt-field select,.gpt-field textarea{width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);color:#e5e7eb;border:1px solid rgba(255,255,255,.16);border-radius:10px;font:inherit;padding:6px 8px;outline:none;}
       /* Fecha y hora más compactos */
-      #gptPlFecha,#gptPlHora{
-        padding:4px 6px;
+            #gptPlFecha,#gptPlHora{
+        padding:3px 6px;
         font-size:12px;
-        height:28px;
+        height:26px;
+        width:100%;
+        min-width:0;
       }
       .gpt-field input:focus,.gpt-field textarea:focus,.gpt-field select:focus{border-color:rgba(124,156,255,.60);box-shadow:0 0 0 3px rgba(124,156,255,.16);}
 
       /* textarea solo para salida; baja altura */
       .gpt-field textarea{min-height:36px;resize:vertical;}
 
-      .gpt-row{display:flex;gap:8px;flex-wrap:wrap;}
+      .gpt-row{display:flex;gap:14px;flex-wrap:wrap;}
+      /* Separación extra solo para la fila de cámaras */
+      .gpt-row.gpt-cams{gap:26px;}
       .gpt-pill{
         display:inline-flex;
         gap:6px;
         align-items:center;
         padding:5px 8px;
-        margin-right:8px; /* separación entre opciones */
+        margin-right:0px; /* separación entre opciones */
         border-radius:9999px;
         background:rgba(255,255,255,.08);
         border:1px solid rgba(255,255,255,.14);
@@ -100,13 +106,15 @@
         </div>
 
         <div class="gpt-modal-grid">
-          <div class="gpt-field">
-            <label for="gptPlFecha">Fecha</label>
-            <input id="gptPlFecha" type="date" value="">
-          </div>
-          <div class="gpt-field">
-            <label for="gptPlHora">Hora</label>
-            <input id="gptPlHora" type="time" value="">
+                   <div class="gpt-row2 gpt-span2">
+            <div class="gpt-field">
+              <label for="gptPlFecha">Fecha</label>
+              <input id="gptPlFecha" type="date" value="">
+            </div>
+            <div class="gpt-field">
+              <label for="gptPlHora">Hora</label>
+              <input id="gptPlHora" type="time" value="">
+            </div>
           </div>
 
           <div class="gpt-field gpt-span2">
@@ -132,7 +140,7 @@
 
           <div class="gpt-field">
             <label>Cámaras</label>
-            <div class="gpt-row" style="margin-top:6px">
+            <div class="gpt-row gpt-cams" style="margin-top:6px">
               <span class="gpt-pill"><input type="radio" name="gptPlCamaras" value="SI" id="gptPlCamSi"><label for="gptPlCamSi" style="margin:0">Sí</label></span>
               <span class="gpt-pill"><input type="radio" name="gptPlCamaras" value="NO" id="gptPlCamNo"><label for="gptPlCamNo" style="margin:0">No</label></span>
               <span class="gpt-pill"><input type="radio" name="gptPlCamaras" value="DESCONOCE" id="gptPlCamDes" checked><label for="gptPlCamDes" style="margin:0">?</label></span>
