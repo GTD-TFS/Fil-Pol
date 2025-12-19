@@ -48,9 +48,9 @@
       /* Fecha y hora más compactos */
             #gptPlFecha,#gptPlHora{
         padding:3px 6px;
-        font-size:12px;
+        font-size:10px;
         height:26px;
-        width:100%;
+        width:85%;
         min-width:0;
       }
       .gpt-field input:focus,.gpt-field textarea:focus,.gpt-field select:focus{border-color:rgba(124,156,255,.60);box-shadow:0 0 0 3px rgba(124,156,255,.16);}
@@ -60,18 +60,19 @@
 
       .gpt-row{display:flex;gap:14px;flex-wrap:wrap;}
       /* Separación extra solo para la fila de cámaras */
-      .gpt-row.gpt-cams{gap:26px;}
-      .gpt-pill{
-        display:inline-flex;
-        gap:6px;
-        align-items:center;
-        padding:5px 8px;
-        margin-right:0px; /* separación entre opciones */
-        border-radius:9999px;
-        background:rgba(255,255,255,.08);
-        border:1px solid rgba(255,255,255,.14);
-        font-size:12px;
-      }
+      .gpt-row.gpt-cams{gap:38px;}
+     .gpt-pill{
+  display:inline-flex;
+  gap:6px;
+  align-items:center;
+  padding:2px 6px;           /* rodea al radio (mínimo) */
+  border-radius:9999px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  font-size:12px;
+}
+.gpt-pill input{margin:0;}
+.gpt-pill label{margin:0;}
 
       .gpt-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;}
       .gpt-btn{border:none;cursor:pointer;border-radius:12px;padding:9px 12px;font-weight:900;letter-spacing:.3px;color:#fff;background:rgba(255,255,255,.08);box-shadow:0 0 14px rgba(255,255,255,.16);transition:transform .15s ease, box-shadow .2s ease;}
