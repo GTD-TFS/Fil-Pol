@@ -2136,23 +2136,17 @@ function ensureAuthOrPrompt(){
     <h2 id="authTitle">Acceso</h2>
     <div class="fields2">
       <div>
-        <label>Usuario/Grupo</label>
-        <input id="authGroup" autocomplete="username" placeholder="p.ej. grupo1">
+        <label>Usuario</label>
+        <input id="authGroup" autocomplete="username" placeholder="••••••••">
       </div>
       <div>
         <label>Contraseña</label>
         <input id="authPass" type="password" autocomplete="current-password" placeholder="••••••••">
       </div>
-      <div class="span2">
-        <label>Servidor OCR</label>
-        <input id="authApiUrl" placeholder="https://…/run.app">
-      </div>
+
       <div class="span2 row center" style="margin-top:10px">
         <button class="btn" id="authSave">Guardar</button>
         <button class="btn secondary" id="authCancel">Cancelar</button>
-      </div>
-      <div class="span2" style="opacity:.85;font-size:12px;line-height:1.35">
-        Se enviará <b>x-group</b> y <b>x-group-pass</b> en cada petición al backend. Queda guardado en este navegador (localStorage).
       </div>
     </div>
   </div>
