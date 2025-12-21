@@ -419,7 +419,10 @@ let MUNICIPIOS_SET = new Set([
   "MADRID","ALCOBENDAS","BARCELONA","VALENCIA","SEVILLA","MALAGA","MURCIA",
   "SANTA CRUZ DE TENERIFE","LAS PALMAS","ARONA","ADEJE","TELDE","VIGO","OVIEDO","GIJON","BILBAO","VALLADOLID","SALAMANCA","TOLEDO"
 ].map(normalize));
-
+// Mapa normalize(mun) -> mun canónico (tal cual viene en la librería)
+let MUNICIPIOS_CANON = new Map();
+// Por defecto, si estamos en fallback, el canónico es el propio valor normalizado
+MUNICIPIOS_CANON = new Map([...MUNICIPIOS_SET].map(m => [m, m]));
 let MUNICIPIOS_NOSPACE = new Map([...MUNICIPIOS_SET].map(m => [m.replace(/\s+/g,''), m]));
 
 const PROVINCIAS = [
@@ -439,16 +442,29 @@ let NOMBRES_SET = new Set(); // se cargará de nombres.json si se puede
 
 async function initMunicipios(){
   try{
-    const res = await fetch('municipios.json', {cache:'no-store'});
-    if (!res.ok) throw new Error('HTTP '+res.status);
-    const arr = await res.json();
+    // municipios.js ya está incluido como <script>, así que debe exponer un array global.
+    // Aceptamos varios nombres habituales para evitar acoplar a uno solo.
+    const arr = (typeof window !== 'undefined')
+      ? (window.MUNICIPIOS || window.municipios || window.Municipios || window.MUNICIPIOS_ES || null)
+      : null;
+
     if (Array.isArray(arr) && arr.length){
-      MUNICIPIOS_SET = new Set(arr.map(x => normalize(String(x))));
-      MUNICIPIOS_NOSPACE = new Map([...MUNICIPIOS_SET].map(m => [m.replace(/\s+/g,''), m]));
-      console.log(`Municipios cargados: ${MUNICIPIOS_SET.size}`);
+      // Conserva el canónico EXACTO (con "DE", acentos, etc.) y usa normalize solo para matching.
+      const rawList = arr
+        .map(x => String(x || "").trim())
+        .filter(Boolean);
+
+      MUNICIPIOS_SET = new Set(rawList.map(normalize));
+      MUNICIPIOS_CANON = new Map(rawList.map(v => [normalize(v), v]));
+      MUNICIPIOS_NOSPACE = new Map(rawList.map(v => [normalize(v).replace(/\s+/g,''), v]));
+
+      console.log(`Municipios cargados (municipios.js): ${MUNICIPIOS_SET.size}`);
+      return;
     }
+
+    console.warn('municipios.js no expuso un array global esperado. Uso fallback.');
   }catch(e){
-    console.warn('municipios.json no accesible (¿file:// / CORS?). Uso fallback.', e);
+    console.warn('Error leyendo municipios.js (global). Uso fallback.', e);
   }
 }
 async function initNombres(){
@@ -495,13 +511,19 @@ function findProvinceAfter(ns, start=0){
 function matchMunicipio(raw){
   const cand = normAZ(raw);
   const can  = normalize(cand);
-  if (MUNICIPIOS_SET.has(can)) return {canon:cand, approx:false, found:true};
+  if (MUNICIPIOS_SET.has(can)) {
+    const canonExact = MUNICIPIOS_CANON.get(can) || cand;
+    return {canon: canonExact, approx:false, found:true};
+  }
   let best=null, bestD=3;
   for (const m of MUNICIPIOS_SET){
     const d = damerauLevenshtein(can, m, 2);
     if (d<bestD){ bestD=d; best=m; if (d===0) break; }
   }
-  if (best!=null && bestD<=2) return {canon: best.replace(/\s+/g,' ').trim(), approx:true, found:true};
+  if (best!=null && bestD<=2) {
+    const canonExact = MUNICIPIOS_CANON.get(best) || best;
+    return {canon: String(canonExact).replace(/\s+/g,' ').trim(), approx:true, found:true};
+  }
   return {canon:cand, approx:false, found:false};
 }
 
