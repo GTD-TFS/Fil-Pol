@@ -1967,10 +1967,33 @@ function mapBackendToFilFields(p){
         .filter(Boolean)
         .join(', ');
 
+  // --- PATCH NIE VERDE (solo front): si backend manda el nombre completo en Apellidos y Nombre vacío ---
+  let _Nombre = sanitizeKeepComma(p?.nombre || '');
+  let _Apellidos = sanitizeKeepComma(p?.apellidos || '').toUpperCase();
+  const _Tipo = sanitizeKeepComma(p?.tipo_documento || 'DNI');
+
+  // Solo aplicar a NIE (certificado UE). Evita tocar DNI/PASAPORTE.
+  if (/\bNIE\b/i.test(_Tipo)) {
+    const isTreatment = (s)=>{
+      const t = String(s||'').trim().toUpperCase().replace(/\s+/g,'');
+      if (!t) return true;
+      const t2 = t.replace(/[^A-Z]/g,'');
+      return t2 === 'D' || t2 === 'DD' || t2 === 'DA' || t2 === 'DDA';
+    };
+
+    if ((isTreatment(_Nombre) || !_Nombre) && _Apellidos) {
+      const toks = _Apellidos.trim().split(/\s+/).filter(Boolean);
+      if (toks.length >= 4) {
+        _Nombre = toks.slice(0,2).join(' ');
+        _Apellidos = toks.slice(2).join(' ');
+      }
+    }
+  }
+
   return {
-    Nombre: sanitizeKeepComma(p?.nombre || ''),
-    Apellidos: sanitizeKeepComma(p?.apellidos || '').toUpperCase(),
-    "Tipo de documento": sanitizeKeepComma(p?.tipo_documento || 'DNI'),
+    Nombre: _Nombre,
+    Apellidos: _Apellidos,
+    "Tipo de documento": _Tipo,
     "Nº Documento": sanitizeKeepComma(p?.numero_documento || ''),
     Nacionalidad: sanitizeKeepComma(p?.nacionalidad || ''),
     "Fecha de nacimiento": sanitizeKeepComma(p?.fecha_nacimiento || ''),
