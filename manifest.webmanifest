@@ -2,26 +2,15 @@
   "name": "LABEJAR",
   "short_name": "LABEJAR",
   "description": "Herramienta offline para formularios y texto operativo.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/Fil-Pol/index.html",
+  "scope": "/Fil-Pol/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b1220",
   "theme_color": "#0b1220",
   "lang": "es",
   "icons": [
-    {
-      "src": "./abeja.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./abeja.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
+    { "src": "/Fil-Pol/abeja.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/Fil-Pol/abeja.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }
-
