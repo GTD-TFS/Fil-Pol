@@ -73,14 +73,14 @@
   .topbar{
     display:flex;
     align-items:center;
-    justify-content:space-between;
+    justify-content:center;
     gap:12px;
     padding: 14px 14px;
     background: var(--surface);
     border: 1px solid var(--hairline);
-    border-radius: var(--radius);
+    border-radius: 9999px;
     backdrop-filter: blur(14px);
-    box-shadow: var(--shadow);
+    /* box-shadow removed for capsule header */
   }
 
   .brand{
@@ -300,10 +300,15 @@
     .app{ gap: 12px; }
 
     .topbar{
-      flex-direction: column;
-      align-items: stretch;
-      gap: 10px;
-      padding: 14px;
+      align-self: center;
+      width: fit-content;
+      max-width: calc(100% - 24px);
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 9999px;
     }
 
     .brand{
@@ -335,22 +340,87 @@
 
     .btn{ padding: 10px 11px; }
   }
+  /* Header principal fijo como "capsule" centrada (sin ocupar todo el ancho visual) */
+.topbar.fixed{
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  z-index: 1000;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  margin: 0 auto;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--hairline);
+  box-shadow: 0 10px 24px rgba(0,0,0,.28);
+}
+
+.topbar.fixed .brandTitle{
+  justify-content: center;
+  text-align: center;
+}
+
+/* Título principal */
+.brandTitle{
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Abeja más grande */
+.brandTitle .bee{
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* Segunda fila (no fija) */
+.subbar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-top: 10px;
+
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px);
+}
+
+/* Ajuste móvil */
+@media (max-width: 520px){
+  .subbar{
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .subbar .subtitle{
+    flex: 1 1 100%;
+  }
+}
   </style>
 </head>
 <body>
 <div class="app">
-  <header class="topbar">
-    <div class="brand">
-      <h1>DECLARATRON</h1>
-      <span class="subtitle">Filiación y denuncia</span>
-    </div>
+ <header class="topbar fixed">
+  <h1 class="brandTitle">
+    LABEJAR <span class="bee">🐝</span>
+  </h1>
+</header>
 
-    <div class="row authBox" style="margin:0">
-      <span class="badge" id="authBadge" title="Credenciales para el backend">Sin acceso</span>
-      <button class="btn secondary" id="btnAuth" title="Configurar acceso">Acceso</button>
-      <button class="btn secondary" id="btnLogout" title="Borrar acceso" style="display:none">Salir</button>
-    </div>
-  </header>
+<div class="subbar">
+  <span class="subtitle">Filiación, denuncia y diligencias</span>
+
+  <div class="row authBox" style="margin:0">
+    <span class="badge" id="authBadge" title="Credenciales para el backend">Sin acceso</span>
+    <button class="btn secondary" id="btnAuth" title="Configurar acceso">Acceso</button>
+    <button class="btn secondary" id="btnLogout" title="Borrar acceso" style="display:none">Salir</button>
+  </div>
+</div>
 
   <div class="card">
     <div class="fields">
