@@ -2,7 +2,7 @@
   "name": "LABEJAR",
   "short_name": "LABEJAR",
   "description": "Herramienta offline para formularios y texto operativo.",
-  "start_url": "./Fil.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -24,3 +24,4 @@
     }
   ]
 }
+
