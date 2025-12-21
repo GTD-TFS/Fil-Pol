@@ -182,6 +182,25 @@ h1::after{
     .span2{grid-column:1/-1}
     .badge{padding:4px 8px;border-radius:9999px;background:rgba(255,255,255,.12);border:1px solid var(--border);font-size:12px}
     .badge{ box-shadow:0 2px 10px rgba(77,163,255,.12), inset 0 0 0 1px rgba(255,255,255,.05) }
+    /* Acceso (usuario/grupo) */
+    .modal{
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.55); z-index:9999; padding:16px;
+    }
+    .modal.open{ display:flex; }
+    .modal .panel{
+      width:min(520px, 96vw);
+      background:rgba(11,18,32,.92);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      padding:16px;
+      box-shadow:0 18px 50px rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+    }
+    .modal .panel h2{ margin:0 0 10px; font-size:16px; }
+    .modal .panel .fields2{ display:grid; gap:10px; grid-template-columns:1fr; }
+    @media(min-width:520px){ .modal .panel .fields2{ grid-template-columns:1fr 1fr; } }
+    .modal .panel .span2{ grid-column:1/-1; }
     .btn:hover{
       box-shadow:0 0 24px rgba(77,163,255,1);
       transform:translateY(-1px);
@@ -254,6 +273,15 @@ h1::after{
 <div class="grid">
   <div class="card">
     <div class="fields">
+
+      <!-- 0) ACCESO POR USUARIO/GRUPO (envía headers al backend OCR) -->
+      <div class="span2">
+        <div class="row center" style="margin:2px 0 10px 0">
+          <span class="badge" id="authBadge" title="Credenciales para el backend">Sin acceso</span>
+          <button class="btn secondary" id="btnAuth" title="Configurar acceso">Acceso</button>
+          <button class="btn secondary" id="btnLogout" title="Borrar acceso" style="display:none">Salir</button>
+        </div>
+      </div>
 
       <!-- 1) BOTONES DNI: Foto + Archivo -->
       <div class="span2">
@@ -1773,8 +1801,108 @@ initNombres();
 </script>
 <script>
 
-// ---------- Imagen → IA (OCR) ----------
-const OCR_API_URL = "https://ocr-vision-1054102077894.europe-west1.run.app";
+let OCR_API_URL_DEFAULT = "https://ocr-vision-1054102077894.europe-west1.run.app";
+let OCR_API_URL = OCR_API_URL_DEFAULT;
+
+// ---------- Acceso (usuario/grupo) ----------
+const AUTH_LS_KEY = "DECLARATRON_AUTH_V1";
+let AUTH = { group:"", pass:"", apiUrl:"" };
+
+function loadAuth(){
+  try{
+    const raw = localStorage.getItem(AUTH_LS_KEY);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    if (obj && typeof obj === 'object'){
+      AUTH.group = String(obj.group||'').trim();
+      AUTH.pass  = String(obj.pass||'').trim();
+      AUTH.apiUrl= String(obj.apiUrl||'').trim();
+      if (AUTH.apiUrl) OCR_API_URL = AUTH.apiUrl;
+    }
+  }catch(_){/* noop */}
+}
+function saveAuth(){
+  localStorage.setItem(AUTH_LS_KEY, JSON.stringify(AUTH));
+}
+function clearAuth(){
+  localStorage.removeItem(AUTH_LS_KEY);
+  AUTH = { group:"", pass:"", apiUrl:"" };
+  OCR_API_URL = OCR_API_URL_DEFAULT;
+}
+
+function authHeaders(){
+  const h = {};
+  if (AUTH.group) h["x-group"] = AUTH.group;
+  if (AUTH.pass)  h["x-group-pass"] = AUTH.pass;
+  return h;
+}
+
+function updateAuthUI(){
+  const badge = document.getElementById('authBadge');
+  const btnLogout = document.getElementById('btnLogout');
+  if (!badge) return;
+  const ok = !!(AUTH.group && AUTH.pass);
+  badge.textContent = ok ? `Acceso: ${AUTH.group}` : 'Sin acceso';
+  if (btnLogout) btnLogout.style.display = ok ? '' : 'none';
+}
+
+function openAuthModal(){
+  const modal = document.getElementById('authModal');
+  if (!modal) return;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+  const g = document.getElementById('authGroup');
+  const p = document.getElementById('authPass');
+  const u = document.getElementById('authApiUrl');
+  if (g) g.value = AUTH.group || '';
+  if (p) p.value = AUTH.pass  || '';
+  if (u) u.value = (AUTH.apiUrl || OCR_API_URL_DEFAULT);
+  setTimeout(()=>{ g?.focus(); }, 0);
+}
+function closeAuthModal(){
+  const modal = document.getElementById('authModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden','true');
+}
+
+function wireAuthUI(){
+  // Modal handlers
+  document.getElementById('btnAuth')?.addEventListener('click', openAuthModal);
+  document.getElementById('btnLogout')?.addEventListener('click', ()=>{
+    clearAuth();
+    updateAuthUI();
+    alert('Acceso borrado.');
+  });
+
+  document.getElementById('authCancel')?.addEventListener('click', closeAuthModal);
+  document.getElementById('authModal')?.addEventListener('click', (e)=>{
+    if (e.target && e.target.id === 'authModal') closeAuthModal();
+  });
+
+  document.getElementById('authSave')?.addEventListener('click', ()=>{
+    const g = (document.getElementById('authGroup')?.value || '').trim();
+    const p = (document.getElementById('authPass')?.value  || '').trim();
+    const u = (document.getElementById('authApiUrl')?.value|| '').trim();
+
+    // URL opcional (si viene vacío, usamos default)
+    AUTH.group = g;
+    AUTH.pass  = p;
+    AUTH.apiUrl= u;
+    OCR_API_URL = AUTH.apiUrl || OCR_API_URL_DEFAULT;
+
+    saveAuth();
+    updateAuthUI();
+    closeAuthModal();
+
+    if (!AUTH.group || !AUTH.pass){
+      alert('Guardado. Ojo: sin grupo/contraseña no podrás usar el OCR.');
+    }
+  });
+}
+
+// init auth (antes de usar OCR_API_URL)
+loadAuth();
 const MAX_IMAGE_BYTES = 400 * 1024;
 const TARGET_LONG_EDGE = 2200;
 
@@ -1835,12 +1963,13 @@ function mapBackendToFilFields(p){
 document.getElementById('dniCameraInput').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
+  if (!ensureAuthOrPrompt()) return;
 
   try {
     const dataUrl = await fileToDataUrl(file);
     const res = await fetch(OCR_API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ imageBase64: dataUrl })
     });
 
@@ -1865,12 +1994,13 @@ document.getElementById('dniCameraInput').addEventListener('change', async (e) =
 document.getElementById('dniFileInput').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
+  if (!ensureAuthOrPrompt()) return;
 
   try {
     const dataUrl = await fileToDataUrl(file);
     const res = await fetch(OCR_API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ imageBase64: dataUrl })
     });
 
@@ -1940,6 +2070,47 @@ function fileToDataUrl(file) {
     img.src = url;
   });
 }
+
+// UI init (deferred: el modal está después de este <script>)
+window.addEventListener('DOMContentLoaded', ()=>{
+  wireAuthUI();
+  updateAuthUI();
+});
+
+// Si no hay credenciales, abre el modal al intentar usar OCR (sin bloquear el resto de la app)
+function ensureAuthOrPrompt(){
+  if (AUTH.group && AUTH.pass) return true;
+  openAuthModal();
+  alert('Configura el acceso (grupo/contraseña) para usar el OCR.');
+  return false;
+}
 </script>
+<!-- Modal de acceso -->
+<div class="modal" id="authModal" aria-hidden="true">
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <h2 id="authTitle">Acceso</h2>
+    <div class="fields2">
+      <div>
+        <label>Usuario/Grupo</label>
+        <input id="authGroup" autocomplete="username" placeholder="p.ej. grupo1">
+      </div>
+      <div>
+        <label>Contraseña</label>
+        <input id="authPass" type="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <div class="span2">
+        <label>Servidor OCR</label>
+        <input id="authApiUrl" placeholder="https://…/run.app">
+      </div>
+      <div class="span2 row center" style="margin-top:10px">
+        <button class="btn" id="authSave">Guardar</button>
+        <button class="btn secondary" id="authCancel">Cancelar</button>
+      </div>
+      <div class="span2" style="opacity:.85;font-size:12px;line-height:1.35">
+        Se enviará <b>x-group</b> y <b>x-group-pass</b> en cada petición al backend. Queda guardado en este navegador (localStorage).
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
