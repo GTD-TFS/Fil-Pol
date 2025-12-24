@@ -535,7 +535,6 @@
           </div>
 
           <div class="row" style="margin:0; justify-content:center; gap:10px">
-            <button class="btn" id="download">⬇️ Descargar</button>
             <button class="btn secondary" id="shareJson" title="Compartir JSON">📤 Compartir</button>
             <button class="btn secondary" style="display:none" id="loadPlain">⬆️ Cargar</button>
             <input type="file" id="plainInput" accept=".json" style="display:none">
@@ -1926,53 +1925,6 @@ document.getElementById('integrarDoc').addEventListener('click', async ()=>{
   bee.addEventListener('pointerleave', end);
 })();
 document.getElementById('Doc').addEventListener('input', (e)=>{ expediente.doc = e.target.value; });
-const btnDownload = document.getElementById('download');
-if (btnDownload){
-  btnDownload.addEventListener('click', ()=>{
-    // Si hay datos en la ficha actual, se guardan automáticamente (1 sola filiación)
-const f = getFormAsFiliacion();
-const anyVal = Object.values(f).some(v => (v||"").trim()!=="");
-
-if (anyVal){
-  // Condición obligatoria también en descarga
-  const condEl = document.getElementById('Condicion');
-  const cond = (condEl?.value || "").trim();
-  if (!cond){
-    alert("Selecciona la Condición (obligatoria) antes de descargar.");
-    condEl?.focus();
-    condEl?.classList.add('invalid');
-    return;
-  }
-  condEl?.classList.remove('invalid');
-  condEl?.classList.add('valid');
-
-  // Persistimos la filiación actual en el expediente (única)
-  expediente.filiaciones = [f];
-
-  // Limpia el formulario tras capturar la filiación (opcional, pero recomendable)
-  clearFormOnly();
-}
-
-    expediente.doc = document.getElementById('Doc').value || expediente.doc || "";
-    const data = { doc: expediente.doc, filiaciones: expediente.filiaciones };
-
-    try{
-      const jsonStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const d = new Date(); const pad = n => String(n).padStart(2,'0');
-      const fname = `Proyecto ${pad(d.getHours())}-${pad(d.getMinutes())} ${pad(d.getDate())}_${pad(d.getMonth()+1)}_${d.getFullYear()}.json`;
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fname;
-      a.click();
-      URL.revokeObjectURL(url);
-    }catch(err){
-      console.error("Error descargando el proyecto:", err);
-      alert("No se ha podido descargar el proyecto.");
-    }
-  });
-}
 
 const btnLoadPlain = document.getElementById('loadPlain');
 const inputPlain   = document.getElementById('plainInput');
@@ -2078,10 +2030,7 @@ document.getElementById('shareJson')?.addEventListener('click', async ()=>{
 
     if (navigator.canShare && navigator.canShare({ files: [file] })){
       // Importante: NO incluir `text:` para evitar que el sistema cree un segundo item de texto
-      await navigator.share({
-        title: 'declaracion.json',
-        files: [file]
-      });
+     await navigator.share({ files: [file] });
     } else {
       const subject = encodeURIComponent('Declaración - JSON');
       const body = encodeURIComponent(text);
