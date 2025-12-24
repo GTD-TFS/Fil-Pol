@@ -49,6 +49,7 @@
     min-height:100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
   }
 
   /* Continuous background layer */
@@ -188,6 +189,7 @@
 
   input, select, textarea{
     width:100%;
+    font-size: 16px; /* iOS: evita zoom al enfocar campos */
     padding: 12px 12px;
     border-radius: var(--radius-sm);
     background: rgba(255,255,255,.06);
@@ -195,6 +197,8 @@
     color: var(--text);
     outline: none;
     transition: border-color .15s ease, background .15s ease;
+    line-height: 1.2;
+    text-rendering: geometricPrecision;
   }
 
   /* Espaciado efectivo entre campos de filiación */
@@ -208,7 +212,7 @@
   }
 
   /* iOS: <select> ignora min-height; usar height explícita */
-  input, select{ height: 38px; }
+  input, select{ height: 42px; line-height: 42px; }
   textarea{ min-height: 140px; resize: vertical; }
   input:focus, select:focus, textarea:focus{ border-color: rgba(10,132,255,.65); }
 
@@ -222,7 +226,14 @@
     background-repeat: no-repeat;
     background-position: right 12px center;
     background-size: 18px 18px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-top: 0;
+    padding-bottom: 0;
   }
+
+  select option{ white-space: nowrap; }
 
   /* Validation (no glows) */
   input.valid,select.valid{ border-color: rgba(52,199,89,.7) !important; }
@@ -498,7 +509,11 @@
       <div><label>Sexo</label>
         <select id="Sexo"><option></option><option>MASCULINO</option><option>FEMENINO</option></select>
       </div>
-      <div><label>Nacionalidad</label><input id="Nacionalidad"></div>
+      <div>
+        <label>Nacionalidad</label>
+        <input id="Nacionalidad" list="dlPaises" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <datalist id="dlPaises"></datalist>
+      </div>
       <div class="span2"><label>Nombre de los Padres</label><input id="Padres"></div>
       <div><label>Fecha de nacimiento</label><input id="Nacimiento"></div>
       <div><label>Lugar de nacimiento</label><input id="Lugar"></div>
@@ -1369,6 +1384,35 @@ function _buildCanonIndexes(){
 
 const __CANON = _buildCanonIndexes();
 
+// --- Autocompletado Nacionalidad (paises.js -> window.PAISES) ---
+function populatePaisesDatalist(){
+  const dl = document.getElementById('dlPaises');
+  if (!dl) return;
+  // evita repoblar cada vez
+  if (dl.dataset.ready === '1') return;
+
+  const items = [];
+  try{
+    const P = window.PAISES;
+    if (P){
+      if (Array.isArray(P.featured)) items.push(...P.featured);
+      if (Array.isArray(P.groups)){
+        P.groups.forEach(g=>{
+          if (g && Array.isArray(g.items)) items.push(...g.items);
+        });
+      }
+    }
+  }catch(_){/* noop */}
+
+  const uniq = Array.from(new Set(items.map(x=>String(x||'').trim()).filter(Boolean)));
+  uniq.sort((a,b)=>a.localeCompare(b,'es'));
+
+  dl.innerHTML = uniq
+    .map(p => `<option value="${p.replace(/"/g,'&quot;')}"></option>`)
+    .join('');
+  dl.dataset.ready = '1';
+}
+
 function canonProvincia(raw){
   const k = _normKey(raw);
   return __CANON.provMap.get(k) || "";
@@ -1588,20 +1632,24 @@ function iso3ToPaisName(raw){
 
 function enforceCanonicalNacionalidad(){
   const el = document.getElementById('Nacionalidad');
-  if (!el || !el.value) return;
+  if (!el || el.value == null) return;
 
-  const raw0 = el.value.toString().trim();
+  const raw0 = String(el.value).trim();
   if (!raw0) return;
 
-  // 1) Si viene ISO3 (ESP/GBR/IND...), conviértelo a nombre objetivo en castellano
-  const isoHit = iso3ToPaisName(raw0);
-  const raw = isoHit || raw0;
+  // 1) Si viene ISO3, pásalo a nombre
+  const isoName = iso3ToPaisName(raw0); // devuelve nombre (mayúsculas) o ""
+  const base = isoName || raw0;
 
-  // 2) Canoniza contra PAISES.js (literal exacto)
-  const canon = canonPais(raw);
+  // 2) Canonizar contra PAISES.js (mantiene el formato exacto del catálogo: mayúsculas)
+  const canon = canonPais(base);
   if (canon){
-    el.value = tcase(canon);
+    el.value = String(canon).toUpperCase();
+    return;
   }
+
+  // 3) Si no hay match, al menos mayúsculas (sin recortar a 3 letras)
+  el.value = _normKey(base).replace(/\s+/g,' ').trim();
 }
 
 // Aplica corrección canónica a:
@@ -1994,6 +2042,15 @@ updateCount();
 validateAll();
 initMunicipios();
 initNombres();
+populatePaisesDatalist();
+// Nacionalidad: al escoger/editar, canoniza y valida
+(function(){
+  const el = document.getElementById('Nacionalidad');
+  if (!el) return;
+  el.addEventListener('focus', populatePaisesDatalist);
+  el.addEventListener('change', ()=>{ enforceCanonicalNacionalidad(); validateField(el,true); });
+  el.addEventListener('blur',  ()=>{ enforceCanonicalNacionalidad(); validateField(el,true); });
+})();
 // Compartir JSON (Web Share API con fallback mailto)
 document.getElementById('shareJson')?.addEventListener('click', async ()=>{
   try{
