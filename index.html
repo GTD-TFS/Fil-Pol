@@ -2045,15 +2045,41 @@ initNombres();
 // Compartir JSON (Web Share API con fallback mailto)
 document.getElementById('shareJson')?.addEventListener('click', async ()=>{
   try{
-    const json = expediente;
-    const text = JSON.stringify(json, null, 2);
+    // Igual que en Descargar: captura la filiación actual si hay valores
+    const f = getFormAsFiliacion();
+    const anyVal = Object.values(f).some(v => (v||"").trim()!=="");
+
+    if (anyVal){
+      // Condición obligatoria también aquí
+      const condEl = document.getElementById('Condicion');
+      const cond = (condEl?.value || "").trim();
+      if (!cond){
+        alert("Selecciona la Condición (obligatoria) antes de compartir.");
+        condEl?.focus();
+        condEl?.classList.add('invalid');
+        return;
+      }
+      condEl?.classList.remove('invalid');
+      condEl?.classList.add('valid');
+
+      expediente.filiaciones = [f];
+      // NO limpiamos aquí: compartir no debe borrar el formulario
+    }
+
+    // Asegura DOC actualizado
+    expediente.doc = document.getElementById('Doc')?.value || expediente.doc || "";
+
+    // Comparte el MISMO payload que descargas
+    const data = { doc: expediente.doc, filiaciones: expediente.filiaciones };
+    const text = JSON.stringify(data, null, 2);
+
     const blob = new Blob([text], { type: 'application/json' });
     const file = new File([blob], 'declaracion.json', { type: 'application/json' });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })){
+      // Importante: NO incluir `text:` para evitar que el sistema cree un segundo item de texto
       await navigator.share({
-        title: 'Declaración',
-        text: 'Adjunto JSON de la declaración',
+        title: 'declaracion.json',
         files: [file]
       });
     } else {
@@ -2062,6 +2088,7 @@ document.getElementById('shareJson')?.addEventListener('click', async ()=>{
       window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
   } catch(e){
+    console.error(e);
     alert('No se pudo compartir el JSON');
   }
 });
